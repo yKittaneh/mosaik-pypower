@@ -1,0 +1,4 @@
+PYPOWER==4.0.1
+mosaik-api==1.0
+numpy==1.7.1
+scipy=0.12.0
