@@ -1,0 +1,47 @@
+package offis.mosaik.simulator
+import common.domain_v1.*
+
+sim PyPower stepsize [1,MAXINT] sec
+	1 model PowerGrid allowing different parameter
+		file          :string
+				
+		* entity Transformer:Line
+			static s_max : ApparentPowerLimit
+			port accepting *
+				out p_from : ActivePowerSinglePhaseFrom
+				out q_from : ReactivePowerSinglePhaseFrom
+				out p_to : ActivePowerSinglePhaseTo	
+				out q_to : ReactivePowerSinglePhaseTo
+			end
+		end entity
+		
+		* entity Branch:Line
+			static s_max : ApparentPowerLimit
+			port accepting *
+				out p_from : ActivePowerSinglePhaseFrom
+				out q_from : ReactivePowerSinglePhaseFrom
+				out p_to : ActivePowerSinglePhaseTo	
+				out q_to : ReactivePowerSinglePhaseTo
+			end
+		end entity			 
+		
+		* entity PQBus:PQProxy
+			static id: Id
+			static vl:VoltageLevel			
+			port accepting * Prosumer
+				in p : ActivePowerSinglePhase aggregation AVG
+				optional in q : ReactivePowerSinglePhase aggregation AVG
+			end
+			port accepting * PQProxy
+				out p_out : ActivePowerSinglePhase 
+				out q_out : ReactivePowerSinglePhase
+			end
+			port accepting *
+				out vm : VoltageMagnitude
+				out va : VoltageAngle
+			end
+		end entity
+	end model
+end sim
+
+
