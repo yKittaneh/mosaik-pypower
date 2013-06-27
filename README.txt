@@ -25,17 +25,14 @@ The adapter uses a simple JSON based format for input files::
             ["<bus_id>", "<bus_type>", base_kv],
         ...
         ],
-        "gen": [
-            ["<gen_id>", "<connect_to_bus_id>"],
-            ...
-        ],
         "trafo": {
-            ["<trafo_id>", ???],
+            ["<trafo_id>", "<from_bus_id>", "<to_bus_id>", <Sr_MVA>, <v1_%>,
+             <P1_MW>],
             ...
         },
         "branch": {
             ["<branch_id>", "<from_bus_id>", "<to_bus_id>", <length_km>,
-             <R'_ohm/km>, <X'_ohm/km>, <C'_nF/km>, <S_max_MVA>],
+             <R'_ohm/km>, <X'_ohm/km>, <C'_nF/km>, <I_max_A>],
             ...
         }
     }
@@ -43,6 +40,8 @@ The adapter uses a simple JSON based format for input files::
 
 where:
 
-- *<bus_id>*, *<ben_id>*, *<trafo_id>*, *<branch_id>* need to be unique names
+- *<bus_id>*, *<trafo_id>*, *<branch_id>* need to be unique names
 - *<bus_type>* may be *"PQ"*, *"PV"* or *"REF"*
 - There may only be one *REF* bus and it must be the first in the list
+
+.. note:: Generators and PV buses are not yet supported.
