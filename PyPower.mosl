@@ -20,6 +20,7 @@ sim PyPower stepsize [1,MAXINT] sec
 
 		* entity Branch:Line
 			static s_max : ApparentPowerLimit
+            static lenght: Length
 			port accepting *
 				out p_from : ActivePowerSinglePhaseFrom
 				out q_from : ReactivePowerSinglePhaseFrom
