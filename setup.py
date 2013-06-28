@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 
-import pypower_mosaik
+import mosaik_pypower
 
 
 setup(
-    name='PYPOWER-mosaik-Adapter',
-    version=pypower_mosaik.__version__,
+    name='mosaik-pypower',
+    version=mosaik_pypower.__version__,
     author='Stefan Scherfke',
     author_email='stefan.scherfke@offis.de',
     description='An adapter to use PYPOWER with mosaik.',
@@ -17,7 +17,7 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'pypower-mosaik = pypower_mosaik.mosaik:main',
+            'pypower-mosaik = mosaik_pypower.mosaik:main',
         ],
     },
     install_requires=[

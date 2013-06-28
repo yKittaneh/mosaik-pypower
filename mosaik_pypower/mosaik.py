@@ -6,7 +6,7 @@ import logging
 
 import mosaik_api
 
-from pypower_mosaik import model
+from mosaik_pypower import model
 
 
 logger = logging.getLogger('cerberus.mosaik')
@@ -44,9 +44,7 @@ class PyPower(mosaik_api.Simulation):
         try:
             ppc, eid_map = model.load_case(params['file'])
 
-        except AttributeError:
-            time.sleep(0.5)
-            error = self._cerberus.get_error()
+        except (ValueError, KeyError):
             raise RuntimeError('Error during initialization: %s' % error) \
                 from None
         self._entities.update(nodes)

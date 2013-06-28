@@ -100,6 +100,8 @@ def _get_branches(raw_case, entity_map, buses):
                 r / base_z, b * base_z, Sr, Sr, Sr, 0, 0, 1, -360, 360)
         branches.append(branch)
 
+    return numpy.array(branches)
+
 
 def _make_transformer(from_bus, to_bus, Sr, v1, P1, base_MVA):
     # Get primary and secondary voltage from connected buses

@@ -1,6 +1,6 @@
 import pytest
 
-from pypower_mosaik import model
+from mosaik_pypower import model
 
 
 def test_uniqe_key_dict():
