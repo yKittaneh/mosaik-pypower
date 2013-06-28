@@ -22,7 +22,7 @@ class PyPower(mosaik_api.Simulation):
 
     def __init__(self):
         self._step_size = None
-        self._count = None  # Number of analyses performed
+        self._count = 0  # Number of analyses performed
         self._entities = {}
         self._relations = []  # List of pair-wise related entities (IDs)
         self._ppc = None  # The pypower case
@@ -52,8 +52,8 @@ class PyPower(mosaik_api.Simulation):
         for eid, attrs in self._entities.items():
             entities[eid] = attrs['etype']
             if attrs['etype'] in ['Transformer', 'Branch']:
-                self._relations.append((attrs['from_eid'], eid))  # TODO
-                self._relations.append((attrs['to_eid'], eid))  # TODO
+                for related in attrs['related']:
+                    self._relations.append((eid, related))  
 
         return {cfg_id: [entities]}
 
@@ -61,24 +61,40 @@ class PyPower(mosaik_api.Simulation):
         return self._relations
 
     def get_static_data(self):
-        return {}
+        data = {eid: attrs['static'] 
+                for eid, attrs in self._entities.items()}
+        return data
 
     def set_data(self, data):
-        idx = self._entitis[data['eid']]['idx']
-        etype = self._entites[data['eid']]['etype']
-        # models.set_data(self._ppc, data_item)
-        from pypower import idx_bus, idx_branch
-        ppc[etype][idx][idx_branc.PQ] = data['pq']
+        for eid, attrs in data.items():
+            idx = self._entities[eid]['idx']
+            etype = self._entities[eid]['etype']
+            aggregated = {}
+            for name, values in attrs.items():
+                aggregated[name] = sum([float(v) for v in values])
+            model.set_inputs(self._ppc, etype, idx, aggregated)        
 
     def step(self):
         self._count += 1
-        res = models.perform_powerflow(self._ppc)
-        self._chache = model.update_cache(res)
+        res = model.perform_powerflow(self._ppc)
+        self._cache = model.update_cache(res[0], self._entities)
         return self._count * self._step_size
 
     def get_data(self, model_name, etype, attributes):
-        return {}
+        if model_name != self.model_name:
+            raise ValueError('Invalid model "%s"' % model_name)
 
+        if not etype in self._cache:
+            # No entities of type "etype" available
+            return {}
+
+        if not attributes:
+            # Return all attributes
+            return self._cache[etype]
+        else:
+            # Filter data dict of each entity by the *attributes* list.
+            return {eid: {attr: data[attr] for attr in attributes}
+                    for eid, data in self._data_cache[etype].items()}
 
 def main():
     mosaik_api.start_simulation(PyPower(), 'PyPower')

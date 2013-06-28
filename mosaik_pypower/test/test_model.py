@@ -47,26 +47,25 @@ def test_load_case():
     assert np.allclose(ppc['branch'], branchdata, rtol=1e-05, atol=1e-08) 
 
     assert emap == {
-        'Grid': {'etype': 'PQBus', 'idx': 0, 'static': {'vl': 110.0}},
+        'Grid': {'etype': 'Grid', 'idx': 0, 'static': {'vl': 110.0}},
         'Bus0': {'etype': 'PQBus', 'idx': 1, 'static': {'vl': 20.0}},
         'Bus1': {'etype': 'PQBus', 'idx': 2, 'static': {'vl': 20.0}},
         'Bus2': {'etype': 'PQBus', 'idx': 3, 'static': {'vl': 20.0}},
         'Bus3': {'etype': 'PQBus', 'idx': 4, 'static': {'vl': 20.0}},
         'Trafo1': {'etype': 'Transformer', 'idx': 0, 'static': {
-            's_max': 40.0, 'prim_bus': 'Grid', 'sec_bus': 'Bus0'}},
+            #'s_max': 40.0, 'prim_bus': 'Grid', 'sec_bus': 'Bus0'}},
+            's_max': 40.0}, 'related': ['Grid', 'Bus0']},
         'B_0': {'etype': 'Branch', 'idx': 1, 'static': {
-            's_max': 19.98, 'length': 5.0}},
+            's_max': 19.98, 'length': 5.0}, 'related': ['Bus0', 'Bus1']},
         'B_1': {'etype': 'Branch', 'idx': 2, 'static': {
-            's_max': 19.98, 'length': 3.0}},
+            's_max': 19.98, 'length': 3.0}, 'related': ['Bus0', 'Bus2']},
         'B_2': {'etype': 'Branch', 'idx': 3, 'static': {
-            's_max': 19.98, 'length': 2.0}},
+            's_max': 19.98, 'length': 2.0}, 'related': ['Bus1', 'Bus3']},
         'B_3': {'etype': 'Branch', 'idx': 4, 'static': {
-            's_max': 19.98, 'length': 0.3}},
+            's_max': 19.98, 'length': 0.3}, 'related': ['Bus2', 'Bus3']},
     }
-
-
+         
 
 if __name__ == '__main__':
     test_uniqe_key_dict()
     test_load_case()
-

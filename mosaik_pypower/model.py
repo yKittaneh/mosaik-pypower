@@ -7,7 +7,7 @@ import collections
 import json
 import math
 
-from pypower import idx_bus
+from pypower import idx_bus, idx_brch, idx_gen
 from pypower.api import ppoption, runpf
 import numpy
 
@@ -65,18 +65,50 @@ def load_case(path):
     return ppc, entity_map
 
 
-def set_inputs(case, inputs):
-    pass  # TODO
+def set_inputs(case, etype, idx, data):
+    if etype == 'PQBus':
+        case['bus'][idx][idx_bus.PD] = data['p'] / 1000000
+        case['bus'][idx][idx_bus.QD] = data['q'] / 1000000
+    else:
+        raise Exception('etype %s unknown' % etype)
+     
 
 
 def perform_powerflow(case):
     ppo = ppoption(OUT_ALL=0, VERBOSE=0)
-    res = runpf(ppc, ppo)
+    res = runpf(case, ppo)
     return res
 
 
-def update_cache(case):
-    cache = {entity_type: {entity_id: {p, q}}}
+def update_cache(case, entity_map):
+    cache = {'PQBus':{}, 'Branch':{}, 'Transformer':{}, 'Grid':{}}
+    for eid, attrs in entity_map.items():
+        etype = attrs['etype']
+        idx = attrs['idx']
+        data = {}
+        if etype == 'PQBus':
+            data['p_out']  = case['bus'][idx][idx_bus.PD]
+            data['q_out']  = case['bus'][idx][idx_bus.QD]
+            data['vm'] = case['bus'][idx][idx_bus.VM]
+            data['va'] = case['bus'][idx][idx_bus.VA]
+
+        elif etype == 'Grid': # is internally a bus
+            data['p']  = case['gen'][idx][idx_gen.PG]
+            data['q']  = case['gen'][idx][idx_gen.QG]
+            
+        elif etype == 'Branch':
+            data['p_from']  = case['branch'][idx][idx_brch.PF]
+            data['q_from']  = case['branch'][idx][idx_brch.QF]
+            data['p_to']    = case['branch'][idx][idx_brch.PT]
+            data['q_to']    = case['branch'][idx][idx_brch.QT]
+            
+        elif etype == 'Transformer': # is internally a branch
+            data['p_from']  = case['branch'][idx][idx_brch.PF]
+            data['q_from']  = case['branch'][idx][idx_brch.QF]
+            data['p_to']    = case['branch'][idx][idx_brch.PT]
+            data['q_to']    = case['branch'][idx][idx_brch.QT]
+                  
+        cache[etype][eid] = data    
     return cache
 
 
@@ -88,16 +120,11 @@ def _get_buses(raw_case, entity_map):
     buses = []
     gens = []
     for i, (bus_id, bus_type, base_kv) in enumerate(raw_case['bus']):
-        entity_map[bus_id] = {'etype': 'PQBus', 'idx': i, 'static': {
-            'vl': base_kv,
-        }}
-
         # Create PYPOWER bus:
         #             id bus_type                    Pd Qd Gs Bs area Vm Va
         #             baseKV   zone Vmax Vmin
         buses.append((i, getattr(idx_bus, bus_type), 0, 0, 0, 0, 1,   1, 0,
-                      base_kv, 1,   1.1, 0.9))
-
+                  base_kv, 1,   1.1, 0.9))
         if bus_type == 'REF':
             # Create generator for reference buses:
             # bus, Pg, Qg, Qmax, Qmin, Vg, mBase, status, Pmax, Pmin, Pc1, Pc2,
@@ -105,6 +132,15 @@ def _get_buses(raw_case, entity_map):
             # ramp_q, apf
             gens.append((i, 0.0, 0.0, 999.0, -999.0, 1.0, raw_case['base_mva'],
                          1, 999.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+          
+            entity_map[bus_id] = {'etype': 'Grid', 'idx': i, 'static': {
+                'vl': base_kv,
+            }}
+              
+        else:
+            entity_map[bus_id] = {'etype': 'PQBus', 'idx': i, 'static': {
+                'vl': base_kv,
+            }}
 
     return numpy.array(buses), numpy.array(gens)
 
@@ -132,14 +168,15 @@ def _get_branches(raw_case, entity_map):
 
         # Update entity map with etype and static data
         entity_map[tid] = {'etype': 'Transformer', 'idx': idx, 'static': {
-            's_max': Sr, 'prim_bus': from_bus[0], 'sec_bus': to_bus[0],
-        }}
+            's_max': Sr, #'prim_bus': from_bus[0], 'sec_bus': to_bus[0],
+        }, 'related': [from_bus[0], to_bus[0]]}
 
         branches.append(_make_transformer(from_bus_idx, to_bus_idx, Sr,
                                           from_bus[BUS_BASE_KV],
                                           to_bus[BUS_BASE_KV],
                                           v1, P1, base_mva))
 
+    #Load other branches
     omega = 2 * math.pi * 50  # s^-1
     for i, (bid, from_bus, to_bus, l, r, x, c, Imax) in enumerate(
             raw_case['branch']):
@@ -162,7 +199,7 @@ def _get_branches(raw_case, entity_map):
         # Update entiy map
         entity_map[bid] = {'etype': 'Branch', 'idx': idx, 'static': {
             's_max': Smax, 'length': l,
-        }}
+        }, 'related': [from_bus[0], to_bus[0]]}
 
         # Create branch
         # fbus, tbus, r, x,

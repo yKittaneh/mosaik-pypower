@@ -5,10 +5,17 @@ sim PyPower stepsize [1,MAXINT] sec
 	1 model PowerGrid allowing different parameter
 		file          :string
 
+		* entity Grid:Prosumer
+			static id: Id
+			static vl:VoltageLevel
+			port accepting * PQProxy
+				out p : ActivePowerSinglePhase
+				out q : ReactivePowerSinglePhase
+			end
+		end entity
+
 		* entity Transformer:Line
 			static s_max : ApparentPowerLimit
-            static prim_bus : PrimaryBusID
-            static sec_bus : SecondaryBusID
 
 			port accepting *
 				out p_from : ActivePowerSinglePhaseFrom
