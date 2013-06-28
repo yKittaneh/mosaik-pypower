@@ -3,6 +3,7 @@ This module implements the mosaik API for Cerberus.
 
 """
 import logging
+import os
 
 import mosaik_api
 
@@ -24,6 +25,7 @@ class PyPower(mosaik_api.Simulation):
         self._count = None  # Number of analyses performed
         self._entities = {}
         self._relations = []  # List of pair-wise related entities (IDs)
+        self._ppc = None  # The pypower case
         self._data_cache = {}  # Cache for load flow outputs
 
     def init(self, step_size, sim_params, model_config):
@@ -42,21 +44,16 @@ class PyPower(mosaik_api.Simulation):
             raise ValueError('File "%s" does not exist!' % params['file'])
 
         try:
-            ppc, eid_map = model.load_case(params['file'])
-
-        except (ValueError, KeyError):
-            raise RuntimeError('Error during initialization: %s' % error) \
-                from None
-        self._entities.update(nodes)
-        self._entities.update(models)
+            self._ppc, self._entities = model.load_case(params['file'])
+        except (ValueError, KeyError) as err:
+            raise RuntimeError(*err.args)
 
         entities = {}
-        for node, attrs in nodes.items():
-            entities[node] = 'Node'
-        for mod, attrs in models.items():
-            entities[mod] = attrs['type']
-            for pin, connected in attrs['pins']:
-                self._relations.append((connected, mod))
+        for eid, attrs in self._entities.items():
+            entities[eid] = attrs['etype']
+            if attrs['etype'] in ['Transformer', 'Branch']:
+                self._relations.append((attrs['from_eid'], eid))  # TODO
+                self._relations.append((attrs['to_eid'], eid))  # TODO
 
         return {cfg_id: [entities]}
 
@@ -67,10 +64,16 @@ class PyPower(mosaik_api.Simulation):
         return {}
 
     def set_data(self, data):
-        pass
+        idx = self._entitis[data['eid']]['idx']
+        etype = self._entites[data['eid']]['etype']
+        # models.set_data(self._ppc, data_item)
+        from pypower import idx_bus, idx_branch
+        ppc[etype][idx][idx_branc.PQ] = data['pq']
 
     def step(self):
         self._count += 1
+        res = models.perform_powerflow(self._ppc)
+        self._chache = model.update_cache(res)
         return self._count * self._step_size
 
     def get_data(self, model_name, etype, attributes):

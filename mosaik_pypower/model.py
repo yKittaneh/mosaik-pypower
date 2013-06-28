@@ -8,6 +8,7 @@ import json
 import math
 
 from pypower import idx_bus
+from pypower.api import ppoption, runpf
 import numpy
 
 
@@ -62,6 +63,21 @@ def load_case(path):
     }
 
     return ppc, entity_map
+
+
+def set_inputs(case, inputs):
+    pass  # TODO
+
+
+def perform_powerflow(case):
+    ppo = ppoption(OUT_ALL=0, VERBOSE=0)
+    res = runpf(ppc, ppo)
+    return res
+
+
+def update_cache(case):
+    cache = {entity_type: {entity_id: {p, q}}}
+    return cache
 
 
 def _get_buses(raw_case, entity_map):
