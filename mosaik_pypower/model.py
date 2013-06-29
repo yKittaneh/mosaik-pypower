@@ -93,8 +93,10 @@ def update_cache(case, entity_map):
             data['va'] = case['bus'][idx][idx_bus.VA]
 
         elif etype == 'Grid': # is internally a bus
-            data['p']  = case['gen'][idx][idx_gen.PG]
-            data['q']  = case['gen'][idx][idx_gen.QG]
+            #todo currently there is only 1 grid and it is the only
+            #bus ith a generator. so we can use a constant index of 0
+            data['p']  = case['gen'][0][idx_gen.PG]
+            data['q']  = case['gen'][0][idx_gen.QG]
             
         elif etype == 'Branch':
             data['p_from']  = case['branch'][idx][idx_brch.PF]
