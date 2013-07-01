@@ -17,7 +17,7 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'pypower-mosaik = mosaik_pypower.mosaik:main',
+            'mosaik-pypower = mosaik_pypower.mosaik:main',
         ],
     },
     install_requires=[

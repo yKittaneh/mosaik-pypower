@@ -94,7 +94,7 @@ class PyPower(mosaik_api.Simulation):
         else:
             # Filter data dict of each entity by the *attributes* list.
             return {eid: {attr: data[attr] for attr in attributes}
-                    for eid, data in self._data_cache[etype].items()}
+                    for eid, data in self._cache[etype].items()}
 
 def main():
     mosaik_api.start_simulation(PyPower(), 'PyPower')
