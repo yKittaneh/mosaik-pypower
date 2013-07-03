@@ -72,7 +72,9 @@ class PyPower(mosaik_api.Simulation):
             aggregated = {}
             for name, values in attrs.items():
                 aggregated[name] = sum([float(v) for v in values])
-            model.set_inputs(self._ppc, etype, idx, aggregated)        
+                
+            #todo reset all bus inputs first of all
+            model.set_inputs(self._ppc, etype, idx, aggregated)
 
     def step(self):
         self._count += 1

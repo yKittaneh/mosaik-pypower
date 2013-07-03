@@ -39,6 +39,12 @@ import numpy
 ) = range(8)
 
 
+        
+BUS_PQ_FACTOR  = 1000000 # from MW to W
+GRID_PQ_FACTOR = 1000000 # from MW to W
+BRANCH_PQ_FACTOR = 1000000 # from MW to W
+TRANS_PQ_FACTOR = 1000000 # from MW to W
+
 class UniqueKeyDict(dict):
     """A :class:`dict` that won't let you insert the same key twice."""
     def __setitem__(self, key, value):
@@ -67,8 +73,8 @@ def load_case(path):
 
 def set_inputs(case, etype, idx, data):
     if etype == 'PQBus':
-        case['bus'][idx][idx_bus.PD] = data['p'] / 1000000
-        case['bus'][idx][idx_bus.QD] = data['q'] / 1000000
+        case['bus'][idx][idx_bus.PD] = data['p'] / BUS_PQ_FACTOR
+        case['bus'][idx][idx_bus.QD] = data['q'] / BUS_PQ_FACTOR
     else:
         raise Exception('etype %s unknown' % etype)
      
@@ -86,29 +92,32 @@ def update_cache(case, entity_map):
         etype = attrs['etype']
         idx = attrs['idx']
         data = {}
+
         if etype == 'PQBus':
-            data['p_out']  = case['bus'][idx][idx_bus.PD]
-            data['q_out']  = case['bus'][idx][idx_bus.QD]
-            data['vm'] = case['bus'][idx][idx_bus.VM]
+            data['p_out']  = case['bus'][idx][idx_bus.PD] * BUS_PQ_FACTOR 
+            data['q_out']  = case['bus'][idx][idx_bus.QD] * BUS_PQ_FACTOR
+            
+            base_kv    = case['bus'][idx][idx_bus.BASE_KV]
+            data['vm'] = case['bus'][idx][idx_bus.VM] * base_kv * 1000
             data['va'] = case['bus'][idx][idx_bus.VA]
 
         elif etype == 'Grid': # is internally a bus
             #todo currently there is only 1 grid and it is the only
-            #bus ith a generator. so we can use a constant index of 0
-            data['p']  = case['gen'][0][idx_gen.PG]
-            data['q']  = case['gen'][0][idx_gen.QG]
+            #bus with a generator. so we can use a constant index of 0
+            data['p']  = case['gen'][0][idx_gen.PG] * GRID_PQ_FACTOR
+            data['q']  = case['gen'][0][idx_gen.QG] * GRID_PQ_FACTOR
             
         elif etype == 'Branch':
-            data['p_from']  = case['branch'][idx][idx_brch.PF]
-            data['q_from']  = case['branch'][idx][idx_brch.QF]
-            data['p_to']    = case['branch'][idx][idx_brch.PT]
-            data['q_to']    = case['branch'][idx][idx_brch.QT]
+            data['p_from'] = case['branch'][idx][idx_brch.PF] * BRANCH_PQ_FACTOR
+            data['q_from'] = case['branch'][idx][idx_brch.QF] * BRANCH_PQ_FACTOR
+            data['p_to']   = case['branch'][idx][idx_brch.PT] * BRANCH_PQ_FACTOR
+            data['q_to']   = case['branch'][idx][idx_brch.QT] * BRANCH_PQ_FACTOR
             
         elif etype == 'Transformer': # is internally a branch
-            data['p_from']  = case['branch'][idx][idx_brch.PF]
-            data['q_from']  = case['branch'][idx][idx_brch.QF]
-            data['p_to']    = case['branch'][idx][idx_brch.PT]
-            data['q_to']    = case['branch'][idx][idx_brch.QT]
+            data['p_from']  = case['branch'][idx][idx_brch.PF] * TRANS_PQ_FACTOR 
+            data['q_from']  = case['branch'][idx][idx_brch.QF] * TRANS_PQ_FACTOR
+            data['p_to']    = case['branch'][idx][idx_brch.PT] * TRANS_PQ_FACTOR
+            data['q_to']    = case['branch'][idx][idx_brch.QT] * TRANS_PQ_FACTOR
                   
         cache[etype][eid] = data    
     return cache
@@ -173,10 +182,11 @@ def _get_branches(raw_case, entity_map):
             's_max': Sr, #'prim_bus': from_bus[0], 'sec_bus': to_bus[0],
         }, 'related': [from_bus[0], to_bus[0]]}
 
-        branches.append(_make_transformer(from_bus_idx, to_bus_idx, Sr,
+        branch = _make_transformer(from_bus_idx, to_bus_idx, Sr,
                                           from_bus[BUS_BASE_KV],
                                           to_bus[BUS_BASE_KV],
-                                          v1, P1, base_mva))
+                                          v1, P1, base_mva)
+        branches.append(branch)
 
     #Load other branches
     omega = 2 * math.pi * 50  # s^-1
@@ -206,18 +216,24 @@ def _get_branches(raw_case, entity_map):
         # Create branch
         # fbus, tbus, r, x,
         # b, rateA, rateB, rateC,ratio, angle, status, angmin, angmax
-        branch = (from_bus_idx, to_bus_idx, r * l / base_z, x * l / base_z,
-                  b * l * base_z, Smax, Smax, Smax, 0, 0, 1, -360, 360)
+        branch = (from_bus_idx, to_bus_idx, r / base_z, x / base_z,
+                  b * base_z, Smax, Smax, Smax, 0, 0, 1, -360, 360)
         branches.append(branch)
 
     return numpy.array(branches)
 
 
 def _make_transformer(from_bus, to_bus, Sr, Vp, Vs, v1, P1, base_mva):
-    """Helper to create a transformer-branch for PP."""
+    """Helper to create a transformer-branch for PP.
+    v1 aka u_k
+    P1 aka P_k
+    """
     # Calculate resistances
     # See: Adolf J. Schwab: Elektroenergiesysteme, pp. 385, 3rd edition, 2012
+    #X_k = (u_k * (U_p ** 2)) / (100 * S)
     X01 = (v1 * (Vp ** 2)) / (100 * Sr)  # Ohm
+    
+    #R_k = (P_k * (X_k ** 2)) / ((u_k * U_p / 100) ** 2)
     R01 = (P1 * (X01 ** 2)) / ((v1 * Vp / 100) ** 2)  # Ohm
     base_z = Vp ** 2 / base_mva
 
