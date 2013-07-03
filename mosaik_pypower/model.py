@@ -71,6 +71,11 @@ def load_case(path):
     return ppc, entity_map
 
 
+def reset_inputs(case):
+    for bus in case['bus']:
+        bus[idx_bus.PD] = 0
+        bus[idx_bus.QD] = 0
+
 def set_inputs(case, etype, idx, data):
     if etype == 'PQBus':
         case['bus'][idx][idx_bus.PD] = data['p'] / BUS_PQ_FACTOR

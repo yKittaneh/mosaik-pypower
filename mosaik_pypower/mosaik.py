@@ -66,14 +66,14 @@ class PyPower(mosaik_api.Simulation):
         return data
 
     def set_data(self, data):
+        model.reset_inputs(self._ppc)
         for eid, attrs in data.items():
             idx = self._entities[eid]['idx']
             etype = self._entities[eid]['etype']
             aggregated = {}
             for name, values in attrs.items():
                 aggregated[name] = sum([float(v) for v in values])
-                
-            #todo reset all bus inputs first of all
+                         
             model.set_inputs(self._ppc, etype, idx, aggregated)
 
     def step(self):
