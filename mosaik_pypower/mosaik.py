@@ -4,7 +4,7 @@ This module implements the mosaik API for Cerberus.
 """
 import logging
 import os
-
+import copy
 import mosaik_api
 
 from mosaik_pypower import model
@@ -45,6 +45,7 @@ class PyPower(mosaik_api.Simulation):
 
         try:
             self._ppc, self._entities = model.load_case(params['file'])
+            #self._ppc_copy = copy.deepcopy(self._ppc)
         except (ValueError, KeyError) as err:
             raise RuntimeError(*err.args)
 
@@ -55,6 +56,7 @@ class PyPower(mosaik_api.Simulation):
                 for related in attrs['related']:
                     self._relations.append((eid, related))  
 
+        #self.f = open('pypower.dbg','w')
         return {cfg_id: [entities]}
 
     def get_relations(self):
@@ -66,15 +68,23 @@ class PyPower(mosaik_api.Simulation):
         return data
 
     def set_data(self, data):
+        #self.f.write('set(%s): %s\n'%(self._count, data))
+        #self._pcc = copy.deepcopy(self._ppc_copy)
         model.reset_inputs(self._ppc)
+        loadsum = 0
         for eid, attrs in data.items():
             idx = self._entities[eid]['idx']
             etype = self._entities[eid]['etype']
             aggregated = {}
             for name, values in attrs.items():
-                aggregated[name] = sum([float(v) for v in values])
+                summe = sum([float(v) for v in values])
+                loadsum += summe
+                aggregated[name] = summe
                          
             model.set_inputs(self._ppc, etype, idx, aggregated)
+        
+        #self.f.write('get(%s): %s\n'%(self._count, loadsum))
+        #self.f.write('sum(%s): %s'%(self._count, loadsum))
 
     def step(self):
         self._count += 1
