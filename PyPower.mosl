@@ -1,8 +1,8 @@
 package offis.mosaik.simulator
-import common.domain_v1.*
+import common.domainModel_v1.*
 
 sim PyPower stepsize [1,MAXINT] sec
-	1 model PowerGrid allowing different parameter
+	1 model PowerGrid allowing different parameters
 		file          :string
 
 		* entity Grid:Prosumer
@@ -15,7 +15,7 @@ sim PyPower stepsize [1,MAXINT] sec
 		end entity
 
 		* entity Transformer:Line
-			static s_max : ApparentPowerLimit
+			static s_max : ApparentPowerLimit_HIGH
 
 			port accepting *
 				out p_from : ActivePowerSinglePhaseFrom
@@ -26,7 +26,7 @@ sim PyPower stepsize [1,MAXINT] sec
 		end entity
 
 		* entity Branch:Line
-			static s_max : ApparentPowerLimit
+			static s_max : ApparentPowerLimit_HIGH
             static length: Length
 			port accepting *
 				out p_from : ActivePowerSinglePhaseFrom
