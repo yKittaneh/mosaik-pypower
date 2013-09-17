@@ -54,7 +54,7 @@ class PyPower(mosaik_api.Simulation):
             entities[eid] = attrs['etype']
             if attrs['etype'] in ['Transformer', 'Branch']:
                 for related in attrs['related']:
-                    self._relations.append((eid, related))  
+                    self._relations.append((eid, related))
 
         #self.f = open('pypower.dbg','w')
         return {cfg_id: [entities]}
@@ -63,7 +63,7 @@ class PyPower(mosaik_api.Simulation):
         return self._relations
 
     def get_static_data(self):
-        data = {eid: attrs['static'] 
+        data = {eid: attrs['static']
                 for eid, attrs in self._entities.items()}
         return data
 
@@ -80,9 +80,9 @@ class PyPower(mosaik_api.Simulation):
                 summe = sum([float(v) for v in values])
                 loadsum += summe
                 aggregated[name] = summe
-                         
+
             model.set_inputs(self._ppc, etype, idx, aggregated)
-        
+
         #self.f.write('get(%s): %s\n'%(self._count, loadsum))
         #self.f.write('sum(%s): %s'%(self._count, loadsum))
 
