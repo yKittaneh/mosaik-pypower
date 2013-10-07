@@ -2,6 +2,7 @@
 This module implements the mosaik API for Cerberus.
 
 """
+from __future__ import division
 import logging
 import os
 import copy
@@ -45,7 +46,6 @@ class PyPower(mosaik_api.Simulation):
 
         try:
             self._ppc, self._entities = model.load_case(params['file'])
-            #self._ppc_copy = copy.deepcopy(self._ppc)
         except (ValueError, KeyError) as err:
             raise RuntimeError(*err.args)
 
@@ -56,7 +56,6 @@ class PyPower(mosaik_api.Simulation):
                 for related in attrs['related']:
                     self._relations.append((eid, related))
 
-        #self.f = open('pypower.dbg','w')
         return {cfg_id: [entities]}
 
     def get_relations(self):
@@ -68,28 +67,20 @@ class PyPower(mosaik_api.Simulation):
         return data
 
     def set_data(self, data):
-        #self.f.write('set(%s): %s\n'%(self._count, data))
-        #self._pcc = copy.deepcopy(self._ppc_copy)
         model.reset_inputs(self._ppc)
-        loadsum = 0
         for eid, attrs in data.items():
             idx = self._entities[eid]['idx']
             etype = self._entities[eid]['etype']
-            aggregated = {}
             for name, values in attrs.items():
-                summe = sum([float(v) for v in values])
-                loadsum += summe
-                aggregated[name] = summe
+                # values is a list of p/q values, sum them up to a single value
+                attrs[name] = sum(float(v) for v in values)
 
-            model.set_inputs(self._ppc, etype, idx, aggregated)
-
-        #self.f.write('get(%s): %s\n'%(self._count, loadsum))
-        #self.f.write('sum(%s): %s'%(self._count, loadsum))
+            model.set_inputs(self._ppc, etype, idx, attrs)
 
     def step(self):
         self._count += 1
         res = model.perform_powerflow(self._ppc)
-        self._cache = model.update_cache(res[0], self._entities)
+        self._cache = model.update_cache(res, self._entities)
         return self._count * self._step_size
 
     def get_data(self, model_name, etype, attributes):
@@ -107,6 +98,7 @@ class PyPower(mosaik_api.Simulation):
             # Filter data dict of each entity by the *attributes* list.
             return {eid: {attr: data[attr] for attr in attributes}
                     for eid, data in self._cache[etype].items()}
+
 
 def main():
     mosaik_api.start_simulation(PyPower(), 'PyPower')
