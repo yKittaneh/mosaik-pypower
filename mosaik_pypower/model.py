@@ -94,7 +94,12 @@ def perform_powerflow(case):
 
 
 def update_cache(case, entity_map):
-    cache = {'PQBus':{}, 'Branch':{}, 'Transformer':{}, 'Grid':{}}
+    cache = {
+        'Grid': {},
+        'PQBus': {},
+        'Transformer': {},
+        'Branch': {},
+    }
     for eid, attrs in entity_map.items():
         etype = attrs['etype']
         idx = attrs['idx']
@@ -105,50 +110,50 @@ def update_cache(case, entity_map):
                 data['p_out'] = case['bus'][idx][idx_bus.PD] * BUS_PQ_FACTOR
                 data['q_out'] = case['bus'][idx][idx_bus.QD] * BUS_PQ_FACTOR
 
-                base_kv    = case['bus'][idx][idx_bus.BASE_KV]
+                base_kv = case['bus'][idx][idx_bus.BASE_KV]
                 data['vm'] = case['bus'][idx][idx_bus.VM] * base_kv * 1000
                 data['va'] = case['bus'][idx][idx_bus.VA]
 
-            elif etype == 'Grid': # is internally a bus
-                #todo currently there is only 1 grid and it is the only
-                #bus with a generator. so we can use a constant index of 0
-                data['p']  = case['gen'][0][idx_gen.PG] * GRID_PQ_FACTOR
-                data['q']  = case['gen'][0][idx_gen.QG] * GRID_PQ_FACTOR
+            elif etype == 'Grid':  # is internally a bus
+                # TODO: currently there is only 1 grid and it is the only
+                # bus with a generator. so we can use a constant index of 0
+                data['p'] = case['gen'][0][idx_gen.PG] * GRID_PQ_FACTOR
+                data['q'] = case['gen'][0][idx_gen.QG] * GRID_PQ_FACTOR
 
             elif etype == 'Branch':
-                data['p_from'] = case['branch'][idx][idx_brch.PF] * BRANCH_PQ_FACTOR
-                data['q_from'] = case['branch'][idx][idx_brch.QF] * BRANCH_PQ_FACTOR
-                data['p_to']   = case['branch'][idx][idx_brch.PT] * BRANCH_PQ_FACTOR
-                data['q_to']   = case['branch'][idx][idx_brch.QT] * BRANCH_PQ_FACTOR
+                data['p_from'] = case['branch'][idx][idx_brch.PF] * BRANCH_PQ_FACTOR  # NOQA
+                data['q_from'] = case['branch'][idx][idx_brch.QF] * BRANCH_PQ_FACTOR  # NOQA
+                data['p_to'] = case['branch'][idx][idx_brch.PT] * BRANCH_PQ_FACTOR  # NOQA
+                data['q_to'] = case['branch'][idx][idx_brch.QT] * BRANCH_PQ_FACTOR  # NOQA
 
             elif etype == 'Transformer': # is internally a branch
-                data['p_from']  = case['branch'][idx][idx_brch.PF] * TRANS_PQ_FACTOR
-                data['q_from']  = case['branch'][idx][idx_brch.QF] * TRANS_PQ_FACTOR
-                data['p_to']    = case['branch'][idx][idx_brch.PT] * TRANS_PQ_FACTOR
-                data['q_to']    = case['branch'][idx][idx_brch.QT] * TRANS_PQ_FACTOR
+                data['p_from'] = case['branch'][idx][idx_brch.PF] * TRANS_PQ_FACTOR  # NOQA
+                data['q_from'] = case['branch'][idx][idx_brch.QF] * TRANS_PQ_FACTOR  # NOQA
+                data['p_to'] = case['branch'][idx][idx_brch.PT] * TRANS_PQ_FACTOR  # NOQA
+                data['q_to'] = case['branch'][idx][idx_brch.QT] * TRANS_PQ_FACTOR  # NOQA
         else:
             # Failed to converge.
             if etype == 'PQBus':
-                data['p_out']  = float('nan')
-                data['q_out']  = float('nan')
+                data['p_out'] = float('nan')
+                data['q_out'] = float('nan')
                 data['vm'] = float('nan')
                 data['va'] = float('nan')
 
             elif etype == 'Grid':
-                data['p']  = float('nan')
-                data['q']  = float('nan')
+                data['p'] = float('nan')
+                data['q'] = float('nan')
 
             elif etype == 'Branch':
                 data['p_from'] = float('nan')
                 data['q_from'] = float('nan')
-                data['p_to']   = float('nan')
-                data['q_to']   = float('nan')
+                data['p_to'] = float('nan')
+                data['q_to'] = float('nan')
 
             elif etype == 'Transformer':
-                data['p_from']  = float('nan')
-                data['q_from']  = float('nan')
-                data['p_to']    = float('nan')
-                data['q_to']    = float('nan')
+                data['p_from'] = float('nan')
+                data['q_from'] = float('nan')
+                data['p_to'] = float('nan')
+                data['q_to'] = float('nan')
 
         cache[etype][eid] = data
     return cache
@@ -255,8 +260,9 @@ def _get_branches(raw_case, entity_map):
 
 def _make_transformer(from_bus, to_bus, Sr, Vp, Vs, v1, P1, base_mva):
     """Helper to create a transformer-branch for PP.
-    v1 aka u_k
-    P1 aka P_k
+
+    v1 aka u_k, P1 aka P_k
+
     """
     # Calculate resistances
     # See: Adolf J. Schwab: Elektroenergiesysteme, pp. 385, 3rd edition, 2012
