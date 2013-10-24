@@ -23,7 +23,6 @@ class PyPower(mosaik_api.Simulation):
 
     def __init__(self):
         self._step_size = None
-        self._count = 0  # Number of analyses performed
         self._entities = {}
         self._relations = []  # List of pair-wise related entities (IDs)
         self._ppc = None  # The pypower case
@@ -77,11 +76,9 @@ class PyPower(mosaik_api.Simulation):
 
             model.set_inputs(self._ppc, etype, idx, attrs)
 
-    def step(self):
-        self._count += 1
+    def step(self, time):
         res = model.perform_powerflow(self._ppc)
         self._cache = model.update_cache(res, self._entities)
-        return self._count * self._step_size
 
     def get_data(self, model_name, etype, attributes):
         if model_name != self.model_name:
