@@ -1,11 +1,11 @@
 """
-This module implements the mosaik API for Cerberus.
+This module implements the mosaik API for `PYPOWER
+<https://pypi.python.org/pypi/PYPOWER/4.0.1>`_.
 
 """
 from __future__ import division
 import logging
 import os
-import copy
 import mosaik_api
 
 from mosaik_pypower import model

@@ -6,6 +6,24 @@ import pytest
 
 from mosaik_pypower import mosaik
 
+
+kV = 1000
+MW = 1000 ** 2
+
+
+def all_close(data, expected, ndigits=2):
+    """Compare two nested dicts and check if their values rounded to *ndigits*
+    after the decimal point are equal.
+
+    """
+    assert data.keys() == expected.keys()
+    for eid, attrs in data.items():
+        for attr, val in attrs.items():
+            assert round(val, ndigits) == round(expected[eid][attr], ndigits)
+
+    return True
+
+
 # Case from https://bitbucket.org/ssc/cim2busbranch/src/tip/contrib/pp_test.py
 #
 #         Grid
@@ -20,6 +38,7 @@ from mosaik_pypower import mosaik
 #          Bus2 ------------------- Bus3
 #
 def test_mosaik_nozmq():
+    """Test the API implementation without the network stack."""
     sim = mosaik.PyPower()
     grid_file = os.path.join(os.path.dirname(__file__), 'data',
                              'test_case_b.json')
@@ -63,13 +82,12 @@ def test_mosaik_nozmq():
         'Bus2': {'vl': 20.0},
         'Bus3': {'vl': 20.0},
         'Trafo1': {'s_max': 40.0},
-        'B_0': {'s_max': 19.98, 'length': 5.0},
-        'B_1': {'s_max': 19.98, 'length': 3.0},
-        'B_2': {'s_max': 19.98, 'length': 2.0},
-        'B_3': {'s_max': 19.98, 'length': 0.3},
+        'B_0': {'s_max': 199.98, 'length': 5.0},
+        'B_1': {'s_max': 199.98, 'length': 3.0},
+        'B_2': {'s_max': 199.98, 'length': 2.0},
+        'B_3': {'s_max': 199.98, 'length': 0.3},
     }
 
-    MW = 1000 ** 2
     data = {
         'Bus0': {'p': [1.76 * MW], 'q': [.95 * MW]},
         'Bus1': {'p': [.8 * MW, -.2 * MW], 'q': [.2 * MW, 0]},
@@ -78,21 +96,79 @@ def test_mosaik_nozmq():
     }
     sim.set_data(data)
 
-    sim.step()
+    sim.step(0)
 
     data = sim.get_data('PowerGrid', 'PQBus', None)
-    print (data)
-    assert 0
+    assert all_close(data, {
+        'Bus0': {
+            'vm': 19.93254 * kV,
+            'va': -0.22,
+            'p_out': 1.76 * MW,
+            'q_out': 0.95 * MW,
+        },
+        'Bus1': {
+            'vm': 19.92981 * kV,
+            'va': -0.21,
+            'p_out': .6 * MW,
+            'q_out': .2 * MW,
+        },
+        'Bus2': {
+            'vm': 19.94052 * kV,
+            'va': -0.19,
+            'p_out': -1.98 * MW,
+            'q_out': -0.28 * MW,
+        },
+        'Bus3': {
+            'vm': 19.93702 * kV,
+            'va': -0.19,
+            'p_out': .85 * MW,
+            'q_out': .53 * MW,
+        },
+    })
 
     data = sim.get_data('PowerGrid', 'Grid', None)
-    print (data)
+    assert all_close(data, {'Grid': {
+        'p': 1.230959 * MW,
+        'q': 1.023141 * MW,
+    }}, ndigits=0)
 
     data = sim.get_data('PowerGrid', 'Branch', None)
-    print (data)
+    assert all_close(data, {
+        'B_0': {
+            'p_from':  0.004606 * MW,
+            'q_from': -0.001519 * MW,
+            'p_to':   -0.004592 * MW,
+            'q_to':   -0.185669 * MW,
+        },
+        'B_1': {
+            'p_from': -0.533868 * MW,
+            'q_from':  0.066461 * MW,
+            'p_to':    0.534151 * MW,
+            'q_to':   -0.178588 * MW,
+        },
+        'B_2': {
+            'p_from': -0.595408 * MW,
+            'q_from': -0.014331 * MW,
+            'p_to':    0.595631 * MW,
+            'q_to':   -0.060366 * MW,
+        },
+        'B_3': {
+            'p_from':  1.445849 * MW,
+            'q_from':  0.458588 * MW,
+            'p_to':   -1.445631 * MW,
+            'q_to':   -0.469634 * MW,
+        },
+    }, ndigits=0)
 
     data = sim.get_data('PowerGrid', 'Transformer', None)
-    print (data)
-    #todo assert data ==
+    assert all_close(data, {
+        'Trafo1': {
+            'p_from': 1.230959 * MW,
+            'q_from': 1.023141 * MW,
+            'p_to':  -1.230738 * MW,
+            'q_to':  -1.014942 * MW,
+        },
+    }, ndigits=0)
 
 
 # GRID_FILE = os.path.join(os.path.dirname(__file__), 'data',
