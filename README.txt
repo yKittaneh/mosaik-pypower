@@ -25,16 +25,16 @@ The adapter uses a simple JSON based format for input files::
             ["<bus_id>", "<bus_type>", base_kv],
         ...
         ],
-        "trafo": {
+        "trafo": [
             ["<trafo_id>", "<from_bus_id>", "<to_bus_id>", <Sr_MVA>, <v1_%>,
-             <P1_MW>],
-            ...
-        },
-        "branch": {
+            <P1_MW>],
+        ...
+        ],
+        "branch": [
             ["<branch_id>", "<from_bus_id>", "<to_bus_id>", <length_km>,
              <R'_ohm/km>, <X'_ohm/km>, <C'_nF/km>, <I_max_A>],
             ...
-        }
+        ]
     }
 
 
