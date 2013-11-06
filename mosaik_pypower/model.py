@@ -26,7 +26,9 @@ import numpy
     TRF_SR,
     TRF_V1,
     TRF_P1,
-) = range(6)
+    TRF_IMAX_P,
+    TRF_IMAX_S,
+) = range(8)
 
 (
     BRANCH_NAME,
@@ -202,7 +204,8 @@ def _get_branches(raw_case, entity_map):
     buses = raw_case['bus']
 
     # Load transformers
-    for i, (tid, from_bus, to_bus, Sr, v1, P1) in enumerate(raw_case['trafo']):
+    for i, (tid, from_bus, to_bus, Sr, v1, P1, Imax_p, Imax_s) in enumerate(
+            raw_case['trafo']):
         if not from_bus in entity_map or not to_bus in entity_map:
             raise ValueError('Bus "%s" or "%s" not found.' %
                              (from_bus, to_bus))
@@ -216,6 +219,10 @@ def _get_branches(raw_case, entity_map):
         # Update entity map with etype and static data
         entity_map[tid] = {'etype': 'Transformer', 'idx': idx, 'static': {
             's_max': Sr,  # 'prim_bus': from_bus[0], 'sec_bus': to_bus[0],
+            'u_p': from_bus[BUS_BASE_KV],
+            'u_s': to_bus[BUS_BASE_KV],
+            'i_max_p': Imax_p,
+            'i_max_s': Imax_s,
         }, 'related': [from_bus[0], to_bus[0]]}
 
         branch = _make_transformer(from_bus_idx, to_bus_idx, Sr,
@@ -245,7 +252,12 @@ def _get_branches(raw_case, entity_map):
 
         # Update entiy map
         entity_map[bid] = {'etype': 'Branch', 'idx': idx, 'static': {
-            's_max': Smax, 'length': l,
+            's_max': Smax,
+            'i_max': Imax,
+            'length': l,
+            'r_per_km': r,
+            'x_per_km': x,
+            'c_per_km': c,
         }, 'related': [from_bus[0], to_bus[0]]}
 
         # Create branch

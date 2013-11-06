@@ -27,7 +27,7 @@ The adapter uses a simple JSON based format for input files::
         ],
         "trafo": [
             ["<trafo_id>", "<from_bus_id>", "<to_bus_id>", <Sr_MVA>, <v1_%>,
-            <P1_MW>],
+            <P1_MW>, <Imax_p_A>, <Imax_s_A>],
         ...
         ],
         "branch": [
