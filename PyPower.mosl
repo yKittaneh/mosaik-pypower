@@ -16,6 +16,10 @@ sim PyPower stepsize [1,MAXINT] sec
 
 		* entity Transformer:Line
 			static s_max : ApparentPowerLimit_HIGH
+			static u_p : VoltageLevel
+			static u_s : VoltageLevel
+			static i_max_p : CurrentLimit
+			static i_max_s : CurrentLimit
 
 			port accepting *
 				out p_from : ActivePowerSinglePhaseFrom
@@ -27,7 +31,11 @@ sim PyPower stepsize [1,MAXINT] sec
 
 		* entity Branch:Line
 			static s_max : ApparentPowerLimit_HIGH
+			static i_max : CurrentLimit
             static length: Length
+            static r_per_km : r_per_km
+            static x_per_km : x_per_km
+            static c_per_km : c_per_km
 			port accepting *
 				out p_from : ActivePowerSinglePhaseFrom
 				out q_from : ReactivePowerSinglePhaseFrom
