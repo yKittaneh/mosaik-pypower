@@ -184,7 +184,6 @@ def test_update_chache(ppc_eidmap):
             for attr, val in data.items():
                 data[attr] = round(val, 1)
 
-    print(cache)
     assert cache == {
         'Grid': {
             u'Grid': {'q': 1023140.8, 'p': 1230959.0},
