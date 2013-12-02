@@ -11,6 +11,8 @@ Compare the results for two different setups::
      / \   |             / \    |
     o   o  o            o   o   o
 
+    Grid 0              Grid 1  Grid 2
+
 The nodes below the transformers (8) should have the same voltages. The sum
 of the ref. nodes in the "separate grids" case should also equal the load of
 the ref. node in the "two in one" case.
@@ -58,6 +60,12 @@ def test_two_in_one_vs_separate():
     for r in results:
         assert r['success'] == 1
 
-    # Compare PG und QG for all generators
+    # We'll now compare result 0 with the merged resuls 1 and 2:
+
+    # Compare PG und QG for all generators (columns 1 and 2)
     assert np.allclose(results[0]['gen'][:,1:3],
                        (results[1]['gen'] + results[2]['gen'])[:,1:3])
+
+    # Copare bus voltages (columns 7 and 8)
+    assert np.allclose(results[0]['bus'][1:,7:9], np.concatenate(
+        [results[1]['bus'][1:,7:9], results[2]['bus'][1:,7:9]]))
