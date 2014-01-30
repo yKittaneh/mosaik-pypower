@@ -9,6 +9,8 @@ from mosaik_pypower import mosaik
 
 kV = 1000
 MW = 1000 ** 2
+mf = 3  # Magic factor, see mosaik_pypower.mosaik.PyPower.__init__
+fpos = -1  # Feed-in positive, see same mosaik_pypower.mosaik.PyPower.__init__
 
 
 def all_close(data, expected, ndigits=2):
@@ -123,11 +125,16 @@ def test_mosaik_nozmq():
     }
 
     data = {
-        'Bus0': {'p': [1.76 * MW], 'q': [.95 * MW]},
-        'Bus1': {'p': [.8 * MW, -.2 * MW], 'q': [.2 * MW, 0]},
-        'Bus2': {'p': [-1.98 * MW], 'q': [-.28 * MW]},
-        'Bus3': {'p': [.85 * MW], 'q': [.53 * MW]},
+        'Bus0': {'p': [1.76], 'q': [.95]},
+        'Bus1': {'p': [.8, -.2], 'q': [.2, 0]},
+        'Bus2': {'p': [-1.98], 'q': [-.28]},
+        'Bus3': {'p': [.85], 'q': [.53]},
     }
+    # Correct input data by converting to MW, appling the magic factor and
+    # changing the sign:
+    for d in data.values():
+        for k, v in d.items():
+            d[k] = [x * MW * mf * fpos for x in v]
     sim.set_data(data)
 
     sim.step(0)

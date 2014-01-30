@@ -23,6 +23,18 @@ class PyPower(mosaik_api.Simulation):
 
     def __init__(self):
         self._step_size = None
+
+        # The incoming feed-in/load may be +/- or -/+. If this is set to true
+        # incoming loads are positive and we have to swap it to -.
+        # Internally, PYPOWER uses + for loads and - for feed-in.
+        # Note, that we only change the input (set_data()).
+        self._feedin_positive = True
+
+        # The line params that we read are for 1 of 3 wires within a cable,
+        # but the loads and feed-in is meant for the complete cable, so we
+        # have to divide all loads and feed-in by 3.
+        self._magic_factor = 3  # Divide all incoming loads by this factor
+
         self._entities = {}
         self._relations = []  # List of pair-wise related entities (IDs)
         self._ppc = None  # The pypower case
@@ -70,6 +82,9 @@ class PyPower(mosaik_api.Simulation):
             for name, values in attrs.items():
                 # values is a list of p/q values, sum them up to a single value
                 attrs[name] = sum(float(v) for v in values)
+                attrs[name] /= self._magic_factor
+                if self._feedin_positive:
+                    attrs[name] *= -1
 
             model.set_inputs(self._ppc, etype, idx, attrs)
 
