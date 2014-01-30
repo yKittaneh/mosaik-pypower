@@ -234,9 +234,12 @@ def _get_branches(raw_case, entity_map):
     omega = 2 * math.pi * 50  # s^-1
     for i, (bid, from_bus, to_bus, l, r, x, c, Imax) in enumerate(
             raw_case['branch']):
-        if not from_bus in entity_map or not to_bus in entity_map:
-            raise ValueError('Bus "%s" or "%s" not found.' %
-                             (from_bus, to_bus))
+        if from_bus not in entity_map:
+            raise ValueError('From "%s" not found for branch "%s"' %
+                             (from_bus, bid))
+        if to_bus not in entity_map:
+            raise ValueError('To "%s" not found for branch "%s"' %
+                             (to_bus, bid))
 
         idx = len(branches)
         from_bus_idx = entity_map[from_bus]['idx']
