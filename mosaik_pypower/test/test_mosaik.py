@@ -9,7 +9,7 @@ from mosaik_pypower import mosaik
 
 kV = 1000
 MW = 1000 ** 2
-mf = 3  # Magic factor, see mosaik_pypower.mosaik.PyPower.__init__
+mf = 1  # Magic factor, see mosaik_pypower.mosaik.PyPower.__init__
 fpos = -1  # Feed-in positive, see same mosaik_pypower.mosaik.PyPower.__init__
 
 
@@ -42,6 +42,7 @@ def all_close(data, expected, ndigits=2):
 def test_mosaik_nozmq():
     """Test the API implementation without the network stack."""
     sim = mosaik.PyPower()
+    sim._magic_factor = mf
     grid_file = os.path.join(os.path.dirname(__file__), 'data',
                              'test_case_b.json')
     init = sim.init(60, {}, [(
@@ -96,7 +97,7 @@ def test_mosaik_nozmq():
             'length': 5.0,
             'r_per_km': 0.125,
             'x_per_km': 0.112,
-            'c_per_km': 300,
+            'c_per_km': 300 * mf,
         },
         'B_1': {
             's_max': 199.98,
@@ -104,7 +105,7 @@ def test_mosaik_nozmq():
             'length': 3.0,
             'r_per_km': 0.125,
             'x_per_km': 0.112,
-            'c_per_km': 300,
+            'c_per_km': 300 * mf,
         },
         'B_2': {
             's_max': 199.98,
@@ -112,7 +113,7 @@ def test_mosaik_nozmq():
             'length': 2.0,
             'r_per_km': 0.125,
             'x_per_km': 0.112,
-            'c_per_km': 300,
+            'c_per_km': 300 * mf,
         },
         'B_3': {
             's_max': 199.98,
@@ -120,7 +121,7 @@ def test_mosaik_nozmq():
             'length': 0.3,
             'r_per_km': 0.125,
             'x_per_km': 0.112,
-            'c_per_km': 300,
+            'c_per_km': 300 * mf,
         },
     }
 

@@ -56,14 +56,14 @@ class UniqueKeyDict(dict):
         super(UniqueKeyDict, self).__setitem__(key, value)
 
 
-def load_case(path):
+def load_case(path, magic_factor=1):
     """Load the case from *path* and create a PYPOWER case and an entiy map.
 
     """
     raw_case = json.load(open(path))
     entity_map = UniqueKeyDict()
     buses, gens = _get_buses(raw_case, entity_map)
-    branches = _get_branches(raw_case, entity_map)
+    branches = _get_branches(raw_case, entity_map, magic_factor)
     ppc = {
         'baseMVA': raw_case['base_mva'],
         'bus': buses,
@@ -194,7 +194,7 @@ def _get_buses(raw_case, entity_map):
     return numpy.array(buses), numpy.array(gens)
 
 
-def _get_branches(raw_case, entity_map):
+def _get_branches(raw_case, entity_map, magic_factor=1):
     """Parse the transformers and branches, return the list of branches for
     PP and update the entity_map.
 
@@ -251,6 +251,7 @@ def _get_branches(raw_case, entity_map):
         base_kv = from_bus[BUS_BASE_KV]  # kV
         Smax = base_kv * Imax / 1000  # MVA
         base_z = base_kv ** 2 / base_mva  # Ohm
+        c *= magic_factor
         b = (omega * c / (10 ** 9))  # b in Ohm^-1, c is in nF
 
         # Update entiy map

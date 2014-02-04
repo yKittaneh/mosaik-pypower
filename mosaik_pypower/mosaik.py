@@ -55,7 +55,8 @@ class PyPower(mosaik_api.Simulation):
         if not os.path.isfile(params['file']):
             raise ValueError('File "%s" does not exist!' % params['file'])
 
-        self._ppc, self._entities = model.load_case(params['file'])
+        self._ppc, self._entities = model.load_case(params['file'],
+                                                    self._magic_factor)
 
         entities = {}
         for eid, attrs in self._entities.items():
