@@ -1,6 +1,6 @@
 """
 This module implements the mosaik API for `PYPOWER
-<https://pypi.python.org/pypi/PYPOWER/4.0.1>`_.
+<https://pypi.python.org/pypi/PYPOWER>`_.
 
 """
 from __future__ import division
@@ -11,24 +11,51 @@ import mosaik_api
 from mosaik_pypower import model
 
 
-logger = logging.getLogger('cerberus.mosaik')
+logger = logging.getLogger('pypower.mosaik')
+
+meta = {
+    'models': {
+        'Grid': {
+            'public': True,
+            'params': [
+                'gridfile',  # Name of the file containing the grid topology.
+            ],
+            'attrs': [],
+        },
+        'RefBus': {
+            'public': False,
+            'params': [],
+            'attrs': ['P', 'Q'],  # [W, VAr]
+        },
+        'PQBus': {
+            'public': False,
+            'params': [],
+            'attrs': ['P', 'Q', 'Vm', 'Va'],  # [W, VAr, V, deg]
+        },
+        'Transformer': {
+            'public': False,
+            'params': [],
+            'attrs': ['P_from', 'Q_from', 'P_to', 'Q_to'],  # [W, VAr] * 2
+        },
+        'Branch': {
+            'public': False,
+            'params': [],
+            'attrs': ['P_from', 'Q_from', 'P_to', 'Q_to'],  # [W, VAr] * 2
+        },
+    },
+}
 
 
-class PyPower(mosaik_api.Simulation):
-    """
-
-    """
-    sim_name = 'PyPower'
-    model_name = 'PowerGrid'
-
+class PyPower(mosaik_api.Simulator):
     def __init__(self):
-        self._step_size = None
+        super(PyPower, self).__init__(meta)
+        self.step_size = None
 
-        # The incoming feed-in/load may be +/- or -/+. If this is set to true
-        # incoming loads are positive and we have to swap it to -.
-        # Internally, PYPOWER uses + for loads and - for feed-in.
-        # Note, that we only change the input (set_data()).
-        self._feedin_positive = True
+        # In PYPOWER loads are positive numbers and feed-in is expressed via
+        # negative numbers. "init()" will that this flag to "1" in this case.
+        # If incoming values for loads are negative and feed-in is positive,
+        # this attribute must be set to -1.
+        self.pos_loads = None
 
         # The line params that we read are for 1 of 3 wires within a cable,
         # but the loads and feed-in is meant for the complete cable, so we
@@ -40,79 +67,77 @@ class PyPower(mosaik_api.Simulation):
         self._ppc = None  # The pypower case
         self._data_cache = {}  # Cache for load flow outputs
 
-    def init(self, step_size, sim_params, model_config):
-        self._step_size = step_size
+    def init(self, step_size, pos_loads=True):
+        logger.debug('Power flow will be computed every %d seconds.' %
+                     step_size)
+        signs = ('positive', 'negative')
+        logger.debug('Loads will be %s numbers, feed-in %s numbers.' %
+                     signs if pos_loads else tuple(reversed(signs)))
 
-        if len(model_config) != 1:
-            raise ValueError('Need exactly one model config, got %s' %
-                             len(model_config))
-        cfg_id, model_name, num_instances, params = model_config[0]
+        self.step_size = step_size
+        self.pos_loads = 1 if pos_loads else -1
 
-        if model_name != self.model_name:
-            raise ValueError('Got unkown model name: %s' % model_name)
-        if num_instances != 1:
-            raise ValueError('Only one instance of PowerGrid allowed.')
-        if not os.path.isfile(params['file']):
-            raise ValueError('File "%s" does not exist!' % params['file'])
+        return self.meta
 
-        self._ppc, self._entities = model.load_case(params['file'],
+    def create(self, num, modelname, gridfile):
+        if num != 1 or self._entities:
+            raise ValueError('Can only one grid instance.')
+        if modelname != 'Grid':
+            raise ValueError('Unknown model: "%s"' % model)
+        if not os.path.isfile(gridfile):
+            raise ValueError('File "%s" does not exist!' % gridfile)
+
+        self._ppc, self._entities = model.load_case(gridfile,
                                                     self._magic_factor)
 
-        entities = {}
-        for eid, attrs in self._entities.items():
-            entities[eid] = attrs['etype']
+        entities = []
+        for eid, attrs in sorted(self._entities.items()):
+            # We'll only add relations from branches to nodes (and not from
+            # nodes to branches) because this is sufficient for mosaik to
+            # build the entity graph.
+            relations = []
             if attrs['etype'] in ['Transformer', 'Branch']:
-                for related in attrs['related']:
-                    self._relations.append((eid, related))
+                relations = attrs['related']
 
-        return {cfg_id: [entities]}
+            entities.append({
+                'eid': eid,
+                'type': attrs['etype'],
+                'rel': relations,
+            })
 
-    def get_relations(self):
-        return self._relations
+        return entities
 
-    def get_static_data(self):
-        data = {eid: attrs['static']
-                for eid, attrs in self._entities.items()}
-        return data
-
-    def set_data(self, data):
+    def step(self, time, inputs):
         model.reset_inputs(self._ppc)
-        for eid, attrs in data.items():
+        for eid, attrs in inputs.items():
             idx = self._entities[eid]['idx']
             etype = self._entities[eid]['etype']
             for name, values in attrs.items():
                 # values is a list of p/q values, sum them up to a single value
                 attrs[name] = sum(float(v) for v in values)
+                if name == 'P':
+                    attrs[name] *= self.pos_loads
                 attrs[name] /= self._magic_factor
-                if self._feedin_positive:
-                    attrs[name] *= -1
 
             model.set_inputs(self._ppc, etype, idx, attrs)
 
-    def step(self, time):
         res = model.perform_powerflow(self._ppc)
         self._cache = model.update_cache(res, self._entities)
 
-    def get_data(self, model_name, etype, attributes):
-        if model_name != self.model_name:
-            raise ValueError('Invalid model "%s"' % model_name)
+        return time + self.step_size
 
-        if not etype in self._cache:
-            # No entities of type "etype" available
-            return {}
+    def get_data(self, outputs):
+        data = {}
+        print('cache', self._cache)
+        for eid, attrs in outputs.items():
+            for attr in attrs:
+                val = self._cache[eid][attr]
+                if attr == 'P':
+                    val *= self.pos_loads
+                data.setdefault(eid, {})[attr] = val
 
-        if not attributes:
-            # Return all attributes
-            return self._cache[etype]
-        else:
-            # Filter data dict of each entity by the *attributes* list.
-            return {eid: {attr: data[attr] for attr in attributes}
-                    for eid, data in self._cache[etype].items()}
+        return data
 
 
 def main():
-    mosaik_api.start_simulation(PyPower(), 'PyPower')
-
-
-if __name__ == '__main__':
-    main()
+    mosaik_api.start_simulation(PyPower(), 'The mosaik-PYPOWER adapter')

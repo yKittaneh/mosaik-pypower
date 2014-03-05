@@ -43,9 +43,8 @@ import numpy
 
 
 BUS_PQ_FACTOR = 1000 ** 2  # from MW to W
-GRID_PQ_FACTOR = 1000 ** 2  # from MW to W
+REFBUS_PQ_FACTOR = 1000 ** 2  # from MW to W
 BRANCH_PQ_FACTOR = 1000 ** 2  # from MW to W
-TRANS_PQ_FACTOR = 1000 ** 2  # from MW to W
 
 
 class UniqueKeyDict(dict):
@@ -82,9 +81,10 @@ def reset_inputs(case):
 
 
 def set_inputs(case, etype, idx, data):
+    print('set inputs', idx, data)
     if etype == 'PQBus':
-        case['bus'][idx][idx_bus.PD] = data['p'] / BUS_PQ_FACTOR
-        case['bus'][idx][idx_bus.QD] = data['q'] / BUS_PQ_FACTOR
+        case['bus'][idx][idx_bus.PD] = data['P'] / BUS_PQ_FACTOR
+        case['bus'][idx][idx_bus.QD] = data['Q'] / BUS_PQ_FACTOR
     else:
         raise ValueError('etype %s unknown' % etype)
 
@@ -96,68 +96,44 @@ def perform_powerflow(case):
 
 
 def update_cache(case, entity_map):
-    cache = {
-        'Grid': {},
-        'PQBus': {},
-        'Transformer': {},
-        'Branch': {},
-    }
+    cache = {}
     for eid, attrs in entity_map.items():
         etype = attrs['etype']
         idx = attrs['idx']
         data = {}
 
         if case['success']:
-            if etype == 'PQBus':
-                data['p_out'] = case['bus'][idx][idx_bus.PD] * BUS_PQ_FACTOR
-                data['q_out'] = case['bus'][idx][idx_bus.QD] * BUS_PQ_FACTOR
-
+            if etype == 'RefBus':  # is internally a bus
+                data['P'] = case['gen'][idx][idx_gen.PG] * REFBUS_PQ_FACTOR
+                data['Q'] = case['gen'][idx][idx_gen.QG] * REFBUS_PQ_FACTOR
+            elif etype == 'PQBus':
+                data['P'] = case['bus'][idx][idx_bus.PD] * BUS_PQ_FACTOR
+                data['Q'] = case['bus'][idx][idx_bus.QD] * BUS_PQ_FACTOR
                 base_kv = case['bus'][idx][idx_bus.BASE_KV]
-                data['vm'] = case['bus'][idx][idx_bus.VM] * base_kv * 1000
-                data['va'] = case['bus'][idx][idx_bus.VA]
-
-            elif etype == 'Grid':  # is internally a bus
-                # TODO: currently there is only 1 grid and it is the only
-                # bus with a generator. so we can use a constant index of 0
-                data['p'] = case['gen'][0][idx_gen.PG] * GRID_PQ_FACTOR
-                data['q'] = case['gen'][0][idx_gen.QG] * GRID_PQ_FACTOR
-
-            elif etype == 'Branch':
-                data['p_from'] = case['branch'][idx][idx_brch.PF] * BRANCH_PQ_FACTOR  # NOQA
-                data['q_from'] = case['branch'][idx][idx_brch.QF] * BRANCH_PQ_FACTOR  # NOQA
-                data['p_to'] = case['branch'][idx][idx_brch.PT] * BRANCH_PQ_FACTOR  # NOQA
-                data['q_to'] = case['branch'][idx][idx_brch.QT] * BRANCH_PQ_FACTOR  # NOQA
-
-            elif etype == 'Transformer': # is internally a branch
-                data['p_from'] = case['branch'][idx][idx_brch.PF] * TRANS_PQ_FACTOR  # NOQA
-                data['q_from'] = case['branch'][idx][idx_brch.QF] * TRANS_PQ_FACTOR  # NOQA
-                data['p_to'] = case['branch'][idx][idx_brch.PT] * TRANS_PQ_FACTOR  # NOQA
-                data['q_to'] = case['branch'][idx][idx_brch.QT] * TRANS_PQ_FACTOR  # NOQA
+                data['Vm'] = case['bus'][idx][idx_bus.VM] * base_kv * 1000
+                data['Va'] = case['bus'][idx][idx_bus.VA]
+            elif etype == 'Branch' or etype == 'Transformer':
+                data['P_from'] = case['branch'][idx][idx_brch.PF] * BRANCH_PQ_FACTOR  # NOQA
+                data['Q_from'] = case['branch'][idx][idx_brch.QF] * BRANCH_PQ_FACTOR  # NOQA
+                data['P_to'] = case['branch'][idx][idx_brch.PT] * BRANCH_PQ_FACTOR  # NOQA
+                data['Q_to'] = case['branch'][idx][idx_brch.QT] * BRANCH_PQ_FACTOR  # NOQA
         else:
             # Failed to converge.
-            if etype == 'PQBus':
-                data['p_out'] = float('nan')
-                data['q_out'] = float('nan')
-                data['vm'] = float('nan')
-                data['va'] = float('nan')
+            if etype == 'RefBus':
+                data['P'] = float('nan')
+                data['Q'] = float('nan')
+            elif etype == 'PQBus':
+                data['P'] = float('nan')
+                data['Q'] = float('nan')
+                data['Vm'] = float('nan')
+                data['Va'] = float('nan')
+            elif etype == 'Branch' or etype == 'Transformer':
+                data['P_from'] = float('nan')
+                data['Q_from'] = float('nan')
+                data['P_to'] = float('nan')
+                data['Q_to'] = float('nan')
 
-            elif etype == 'Grid':
-                data['p'] = float('nan')
-                data['q'] = float('nan')
-
-            elif etype == 'Branch':
-                data['p_from'] = float('nan')
-                data['q_from'] = float('nan')
-                data['p_to'] = float('nan')
-                data['q_to'] = float('nan')
-
-            elif etype == 'Transformer':
-                data['p_from'] = float('nan')
-                data['q_from'] = float('nan')
-                data['p_to'] = float('nan')
-                data['q_to'] = float('nan')
-
-        cache[etype][eid] = data
+        cache[eid] = data
     return cache
 
 
@@ -182,7 +158,7 @@ def _get_buses(raw_case, entity_map):
             gens.append((i, 0.0, 0.0, 999.0, -999.0, 1.0, raw_case['base_mva'],
                          1, 999.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
-            entity_map[bus_id] = {'etype': 'Grid', 'idx': i, 'static': {
+            entity_map[bus_id] = {'etype': 'RefBus', 'idx': i, 'static': {
                 'vl': base_kv,
             }}
 

@@ -61,7 +61,7 @@ def test_load_case():
     assert np.allclose(ppc['branch'], branchdata)
 
     assert emap == {
-        'Grid': {'etype': 'Grid', 'idx': 0, 'static': {'vl': 110.0}},
+        'Grid': {'etype': 'RefBus', 'idx': 0, 'static': {'vl': 110.0}},
         'Bus0': {'etype': 'PQBus', 'idx': 1, 'static': {'vl': 20.0}},
         'Bus1': {'etype': 'PQBus', 'idx': 2, 'static': {'vl': 20.0}},
         'Bus2': {'etype': 'PQBus', 'idx': 3, 'static': {'vl': 20.0}},
@@ -122,15 +122,15 @@ def test_reset_inputs(ppc):
 
 def test_set_inputs(ppc):
     inputs = [
-        {'p': 1000000, 'q': 2000000},
-        {'p': 3000000, 'q': 4000000},
-        {'p': 5000000, 'q': 6000000},
-        {'p': 7000000, 'q': 8000000},
+        {'P': 1000000, 'Q': 2000000},
+        {'P': 3000000, 'Q': 4000000},
+        {'P': 5000000, 'Q': 6000000},
+        {'P': 7000000, 'Q': 8000000},
     ]
     for i, data in enumerate(inputs):
         model.set_inputs(ppc, 'PQBus', i, data)
-        assert ppc['bus'][i][idx_bus.PD] == data['p'] / 1000000
-        assert ppc['bus'][i][idx_bus.QD] == data['q'] / 1000000
+        assert ppc['bus'][i][idx_bus.PD] == data['P'] / 1000000
+        assert ppc['bus'][i][idx_bus.QD] == data['Q'] / 1000000
 
 
 def test_set_inputs_wrong_etype(ppc):
@@ -139,11 +139,11 @@ def test_set_inputs_wrong_etype(ppc):
 
 def test_perform_powerflow(ppc):
     inputs = [
-        {'p':        0, 'q':       0},  # grid
-        {'p':  1760000, 'q':  950000},  # bus_0
-        {'p':   600000, 'q':  200000},
-        {'p': -1980000, 'q': -280000},
-        {'p':   850000, 'q':  530000},
+        {'P':        0, 'Q':       0},  # grid
+        {'P':  1760000, 'Q':  950000},  # bus_0
+        {'P':   600000, 'Q':  200000},
+        {'P': -1980000, 'Q': -280000},
+        {'P':   850000, 'Q':  530000},
     ]
     for i, data in enumerate(inputs):
         model.set_inputs(ppc, 'PQBus', i, data)
@@ -179,28 +179,19 @@ def test_update_chache(ppc_eidmap):
     res = test_perform_powerflow(ppc)
     cache = model.update_cache(res, emap)
 
-    for etype, entities in cache.items():
-        for eid, data in entities.items():
-            for attr, val in data.items():
-                data[attr] = round(val, 1)
+    for eid, data in cache.items():
+        for attr, val in data.items():
+            data[attr] = round(val, 1)
 
     assert cache == {
-        'Grid': {
-            u'Grid': {'q': 1023140.8, 'p': 1230959.0},
-        },
-        'Transformer': {
-            u'Trafo1': {'p_to': -1230737.5, 'p_from': 1230959.0, 'q_from': 1023140.8, 'q_to': -1014942.1},  # NOQA
-        },
-        'PQBus': {
-            u'Bus2': {'vm': 19940.5, 'va': -0.2, 'p_out': -1980000.0, 'q_out': -280000.0},  # NOQA
-            u'Bus3': {'vm': 19937.0, 'va': -0.2, 'p_out':   850000.0, 'q_out':  530000.0},  # NOQA
-            u'Bus0': {'vm': 19932.5, 'va': -0.2, 'p_out':  1760000.0, 'q_out':  950000.0},  # NOQA
-            u'Bus1': {'vm': 19929.8, 'va': -0.2, 'p_out':   600000.0, 'q_out':  200000.0},  # NOQA
-        },
-        'Branch': {
-            u'B_0': {'p_to':    -4592.2, 'p_from':    4605.6, 'q_from':  -1519.2, 'q_to': -185669.3},  # NOQA
-            u'B_1': {'p_to':   534151.3, 'p_from': -533868.1, 'q_from':  66461.3, 'q_to': -178588.2},  # NOQA
-            u'B_2': {'p_to':   595631.2, 'p_from': -595407.8, 'q_from': -14330.7, 'q_to':  -60366.0},  # NOQA
-            u'B_3': {'p_to': -1445631.2, 'p_from': 1445848.7, 'q_from': 458588.2, 'q_to': -469634.0},  # NOQA
-        },
+        'Grid': {'Q': 1023140.8, 'P': 1230959.0},
+        'Trafo1': {'P_to': -1230737.5, 'P_from': 1230959.0, 'Q_from': 1023140.8, 'Q_to': -1014942.1},  # NOQA
+        'Bus2': {'Vm': 19940.5, 'Va': -0.2, 'P': -1980000.0, 'Q': -280000.0},  # NOQA
+        'Bus3': {'Vm': 19937.0, 'Va': -0.2, 'P':   850000.0, 'Q':  530000.0},  # NOQA
+        'Bus0': {'Vm': 19932.5, 'Va': -0.2, 'P':  1760000.0, 'Q':  950000.0},  # NOQA
+        'Bus1': {'Vm': 19929.8, 'Va': -0.2, 'P':   600000.0, 'Q':  200000.0},  # NOQA
+        'B_0': {'P_to':    -4592.2, 'P_from':    4605.6, 'Q_from':  -1519.2, 'Q_to': -185669.3},  # NOQA
+        'B_1': {'P_to':   534151.3, 'P_from': -533868.1, 'Q_from':  66461.3, 'Q_to': -178588.2},  # NOQA
+        'B_2': {'P_to':   595631.2, 'P_from': -595407.8, 'Q_from': -14330.7, 'Q_to':  -60366.0},  # NOQA
+        'B_3': {'P_to': -1445631.2, 'P_from': 1445848.7, 'Q_from': 458588.2, 'Q_to': -469634.0},  # NOQA
     }

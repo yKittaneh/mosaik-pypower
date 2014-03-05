@@ -11,8 +11,13 @@ setup(
     description='An adapter to use PYPOWER with mosaik.',
     long_description=open('README.txt').read(),
     url='',
-    download_url='',
     license='',
+    install_requires=[
+        'PYPOWER>=4',
+        'mosaik-api>=2.0a1',
+        'numpy>=1.8',
+        'scipy>=0.13',
+    ],
     packages=find_packages(),
     include_package_data=True,
     entry_points={
@@ -20,14 +25,13 @@ setup(
             'mosaik-pypower = mosaik_pypower.mosaik:main',
         ],
     },
-    install_requires=[
-        'PYPOWER',
-        'mosaik-api',
-    ],
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Private :: Do Not Upload',  # Prevents accidental upload to PyPI
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
         'Intended Audience :: Science/Research',
         'License :: Other/Proprietary License',
+        'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
