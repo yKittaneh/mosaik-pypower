@@ -128,7 +128,6 @@ class PyPower(mosaik_api.Simulator):
 
     def get_data(self, outputs):
         data = {}
-        print('cache', self._cache)
         for eid, attrs in outputs.items():
             for attr in attrs:
                 val = self._cache[eid][attr]
