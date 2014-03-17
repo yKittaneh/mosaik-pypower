@@ -83,7 +83,7 @@ class PyPower(mosaik_api.Simulator):
         if num != 1 or self._entities:
             raise ValueError('Can only one grid instance.')
         if modelname != 'Grid':
-            raise ValueError('Unknown model: "%s"' % model)
+            raise ValueError('Unknown model: "%s"' % modelname)
         if not os.path.isfile(gridfile):
             raise ValueError('File "%s" does not exist!' % gridfile)
 
