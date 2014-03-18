@@ -22,7 +22,7 @@ The adapter uses a simple JSON based format for input files::
     {
         "base_mva": <global_base_mva>,
         "bus": [
-            ["<bus_id>", "<bus_type>", base_kv],
+            ["<bus_id>", "<bus_type>", <base_kv>],
         ...
         ],
         "trafo": [
