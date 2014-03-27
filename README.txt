@@ -1,4 +1,4 @@
-pypower-mosaik
+mosaik-pypower
 ==============
 
 This package contains the Adapter to connect *PYPOWER* to *mosaik*.
@@ -7,11 +7,18 @@ This package contains the Adapter to connect *PYPOWER* to *mosaik*.
 Installation
 ------------
 
-Just execute ``pip install .``. If you run into any problems, try to install
-the tested dependency configuration via ``pip intall -r requirements.txt``.
+*mosaik-pypower* currently requires an experimental branch of PYPOWER with
+Python 3 support which you have to install first::
 
-If you also want to run the tests, run ``pip install -r
-requirements-dev.txt`` and ``py.test`` to execute the test suite.
+   $ pip install git+https://github.com/sscherfke/PYPOWER.git@py2and3#egg=PYPOWER
+   $ pip install mosaik-pypower
+
+You can run the tests with::
+
+    $ hg clone https://bitbucket.org/mosaik/mosaik-pypower
+    $ cd mosaik-pypower
+    $ pip install -r requirements.txt
+    $ py.test
 
 
 Input File Format

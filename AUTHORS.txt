@@ -1,0 +1,4 @@
+Authors
+=======
+
+The mosaik-pypower is developed by Stefan Scherfke.

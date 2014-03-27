@@ -1,10 +1,12 @@
--e ../mosaik-api-python
 git+https://github.com/sscherfke/PYPOWER.git@py2and3#egg=PYPOWER
-arrow==0.4.2
 docopt==0.6.1
-hg+https://bitbucket.org/simpy/simpy.io@1a81463#egg=simpy.io
-numpy==1.8.0
-py==1.4.19
-pytest==2.5.1
+mosaik-api==2.0a1
+numpy==1.8.1
+py==1.4.20
+pytest==2.5.2
 scipy==0.13.3
-simpy==3.0.2
+simpy==3.0.3
+simpy.io==0.1
+tox==1.7.0
+virtualenv==1.11.4
+wheel==0.22.0
