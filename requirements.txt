@@ -1,12 +1,12 @@
-git+https://github.com/sscherfke/PYPOWER.git@py2and3#egg=PYPOWER
+git+https://github.com/rwl/PYPOWER
 docopt==0.6.1
 mosaik-api==2.0a1
 numpy==1.8.1
 py==1.4.20
 pytest==2.5.2
 scipy==0.13.3
-simpy==3.0.3
+simpy==3.0.4
 simpy.io==0.1
-tox==1.7.0
+tox==1.7.1
 virtualenv==1.11.4
-wheel==0.22.0
+wheel==0.23.0
