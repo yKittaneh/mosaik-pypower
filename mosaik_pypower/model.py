@@ -228,7 +228,6 @@ def _get_branches(raw_case, entity_map, magic_factor=1):
         base_kv = from_bus[BUS_BASE_KV]  # kV
         Smax = base_kv * Imax / 1000  # MVA
         base_z = base_kv ** 2 / base_mva  # Ohm
-        c *= magic_factor
         b = (omega * c / (10 ** 9))  # b in Ohm^-1, c is in nF
 
         # Update entiy map
@@ -242,6 +241,7 @@ def _get_branches(raw_case, entity_map, magic_factor=1):
         }, 'related': [from_bus[0], to_bus[0]]}
 
         # Create branch
+        c *= magic_factor
         # fbus, tbus, r, x,
         # b, rateA, rateB, rateC,ratio, angle, status, angmin, angmax
         branch = (from_bus_idx, to_bus_idx, r * l / base_z, x * l / base_z,
