@@ -105,7 +105,12 @@ class PyPower(mosaik_api.Simulator):
                 'rel': relations,
             })
 
-        return entities
+        return [{
+            'eid': 'grid_0',
+            'type': 'Grid',
+            'rel': [],
+            'children': entities,
+        }]
 
     def step(self, time, inputs):
         model.reset_inputs(self._ppc)

@@ -46,18 +46,21 @@ def test_mosaik():
         'Branch', 'Grid', 'PQBus', 'RefBus', 'Transformer']
 
     entities = sim.create(1, 'Grid', grid_file)
-    assert entities == [
-        {'eid': 'B_0', 'type': 'Branch', 'rel': ['Bus0', 'Bus1']},
-        {'eid': 'B_1', 'type': 'Branch', 'rel': ['Bus0', 'Bus2']},
-        {'eid': 'B_2', 'type': 'Branch', 'rel': ['Bus1', 'Bus3']},
-        {'eid': 'B_3', 'type': 'Branch', 'rel': ['Bus2', 'Bus3']},
-        {'eid': 'Bus0', 'type': 'PQBus', 'rel': []},
-        {'eid': 'Bus1', 'type': 'PQBus', 'rel': []},
-        {'eid': 'Bus2', 'type': 'PQBus', 'rel': []},
-        {'eid': 'Bus3', 'type': 'PQBus', 'rel': []},
-        {'eid': 'Grid', 'type': 'RefBus', 'rel': []},
-        {'eid': 'Trafo1', 'type': 'Transformer', 'rel': ['Grid', 'Bus0']},
-    ]
+    entities[0]['children'].sort(key=lambda e: e['eid'])
+    assert entities == [{
+        'eid': 'grid_0', 'type': 'Grid', 'rel': [], 'children': [
+            {'eid': 'B_0', 'type': 'Branch', 'rel': ['Bus0', 'Bus1']},
+            {'eid': 'B_1', 'type': 'Branch', 'rel': ['Bus0', 'Bus2']},
+            {'eid': 'B_2', 'type': 'Branch', 'rel': ['Bus1', 'Bus3']},
+            {'eid': 'B_3', 'type': 'Branch', 'rel': ['Bus2', 'Bus3']},
+            {'eid': 'Bus0', 'type': 'PQBus', 'rel': []},
+            {'eid': 'Bus1', 'type': 'PQBus', 'rel': []},
+            {'eid': 'Bus2', 'type': 'PQBus', 'rel': []},
+            {'eid': 'Bus3', 'type': 'PQBus', 'rel': []},
+            {'eid': 'Grid', 'type': 'RefBus', 'rel': []},
+            {'eid': 'Trafo1', 'type': 'Transformer', 'rel': ['Grid', 'Bus0']},
+        ],
+    }]
 
     # assert sim.get_static_data() == {
     #     'Grid': {'vl': 110.0},
