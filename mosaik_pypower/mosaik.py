@@ -67,7 +67,7 @@ class PyPower(mosaik_api.Simulator):
         self._ppc = None  # The pypower case
         self._data_cache = {}  # Cache for load flow outputs
 
-    def init(self, step_size, pos_loads=True):
+    def init(self, sid, step_size, pos_loads=True):
         logger.debug('Power flow will be computed every %d seconds.' %
                      step_size)
         signs = ('positive', 'negative')
