@@ -14,10 +14,10 @@ setup(
                       open('AUTHORS.txt').read()),
     url='https://bitbucket.org/mosaik/mosaik-pypower',
     install_requires=[
-        'PYPOWER>=4',
+        'PYPOWER>=4.1',
         'mosaik-api>=2.0a1',
-        'numpy>=1.8',
-        'scipy>=0.13',
+        'numpy>=1.6',
+        'scipy>=0.9',
     ],
     packages=find_packages(),
     include_package_data=True,
