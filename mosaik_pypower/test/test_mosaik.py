@@ -40,8 +40,8 @@ def test_mosaik():
     sim = mosaik.PyPower()
     sim._magic_factor = mf
     grid_file = os.path.join(os.path.dirname(__file__), 'data',
-                             'test_case_b.json')
-    meta = sim.init(60, pos_loads=(pos_loads > 0))
+                             'test_case_b.old.json')
+    meta = sim.init(0, 60, pos_loads=(pos_loads > 0))
     assert list(sorted(meta['models'].keys())) == [
         'Branch', 'Grid', 'PQBus', 'RefBus', 'Transformer']
 
@@ -133,70 +133,35 @@ def test_mosaik():
         'Bus1': ['P', 'Q', 'Vm', 'Va'],
         'Bus2': ['P', 'Q', 'Vm', 'Va'],
         'Bus3': ['P', 'Q', 'Vm', 'Va'],
-        'Trafo1': ['P_from', 'Q_from', 'P_to', 'Q_to'],
-        'B_0': ['P_from', 'Q_from', 'P_to', 'Q_to'],
-        'B_1': ['P_from', 'Q_from', 'P_to', 'Q_to'],
-        'B_2': ['P_from', 'Q_from', 'P_to', 'Q_to'],
-        'B_3': ['P_from', 'Q_from', 'P_to', 'Q_to'],
     })
     print(data)
     assert all_close(data, {
         'Bus0': {
-            'Vm': 19.93254 * kV,
+            'Vm': 19.999 * kV,
             'Va': -0.22,
             'P': 1.76 * MW * pos_loads,
             'Q': 0.95 * MW,
         },
         'Bus1': {
-            'Vm': 19.92981 * kV,
+            'Vm': 20. * kV,
             'Va': -0.21,
             'P': .6 * MW * pos_loads,
             'Q': .2 * MW,
         },
         'Bus2': {
-            'Vm': 19.94052 * kV,
+            'Vm': 20.013 * kV,
             'Va': -0.19,
             'P': -1.98 * MW * pos_loads,
             'Q': -0.28 * MW,
         },
         'Bus3': {
-            'Vm': 19.93702 * kV,
+            'Vm': 20.009 * kV,
             'Va': -0.19,
             'P': .85 * MW * pos_loads,
             'Q': .53 * MW,
         },
         'Grid': {
-            'P': 1.230959 * MW * pos_loads,
-            'Q': 1.023141 * MW,
-        },
-        'B_0': {
-            'P_from':  0.004606 * MW,
-            'Q_from': -0.001519 * MW,
-            'P_to':   -0.004592 * MW,
-            'Q_to':   -0.185669 * MW,
-        },
-        'B_1': {
-            'P_from': -0.533868 * MW,
-            'Q_from':  0.066461 * MW,
-            'P_to':    0.534151 * MW,
-            'Q_to':   -0.178588 * MW,
-        },
-        'B_2': {
-            'P_from': -0.595408 * MW,
-            'Q_from': -0.014331 * MW,
-            'P_to':    0.595631 * MW,
-            'Q_to':   -0.060366 * MW,
-        },
-        'B_3': {
-            'P_from':  1.445849 * MW,
-            'Q_from':  0.458588 * MW,
-            'P_to':   -1.445631 * MW,
-            'Q_to':   -0.469634 * MW,
-        },
-        'Trafo1': {
-            'P_from': 1.230959 * MW,
-            'Q_from': 1.023141 * MW,
-            'P_to':  -1.230738 * MW,
-            'Q_to':  -1.014942 * MW,
+            'P': 1.230925 * MW * pos_loads,
+            'Q': 0.441471 * MW,
         },
     }, ndigits=0)

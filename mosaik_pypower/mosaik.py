@@ -57,11 +57,6 @@ class PyPower(mosaik_api.Simulator):
         # this attribute must be set to -1.
         self.pos_loads = None
 
-        # The line params that we read are for 1 of 3 wires within a cable,
-        # but the loads and feed-in is meant for the complete cable, so we
-        # have to divide all loads and feed-in by 3.
-        self._magic_factor = 3  # Divide all incoming loads by this factor
-
         self._entities = {}
         self._relations = []  # List of pair-wise related entities (IDs)
         self._ppc = None  # The pypower case
@@ -87,8 +82,7 @@ class PyPower(mosaik_api.Simulator):
         if not os.path.isfile(gridfile):
             raise ValueError('File "%s" does not exist!' % gridfile)
 
-        self._ppc, self._entities = model.load_case(gridfile,
-                                                    self._magic_factor)
+        self._ppc, self._entities = model.load_case(gridfile)
 
         entities = []
         for eid, attrs in sorted(self._entities.items()):
@@ -122,7 +116,6 @@ class PyPower(mosaik_api.Simulator):
                 attrs[name] = sum(float(v) for v in values)
                 if name == 'P':
                     attrs[name] *= self.pos_loads
-                attrs[name] /= self._magic_factor
 
             model.set_inputs(self._ppc, etype, idx, attrs)
 
