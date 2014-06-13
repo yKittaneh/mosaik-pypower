@@ -10,6 +10,10 @@ import math
 from pypower import idx_bus, idx_brch, idx_gen
 from pypower.api import ppoption, runpf
 import numpy
+import xlrd
+
+from mosaik_pypower import resource_db as rdb
+
 
 # The line params that we read are for 1 of 3 wires within a cable,
 # but the loads and feed-in is meant for the complete cable, so we
@@ -126,20 +130,88 @@ def _load_json(path, entity_map):
 
     if 'base_mva' in raw_case:
         base_mva = raw_case['base_mva']
-        buses = _get_buses_old(raw_case, entity_map)
+        buses = _get_buses(raw_case, entity_map)
         branches = _get_branches_old(raw_case, entity_map)
     else:
-        pass
+        buses = _get_buses(raw_case, entity_map)
+        branches = _get_branches(raw_case, entity_map)
+        base_mva = rdb.base_mva.get(buses[0][BUS_BASE_KV])
 
     return base_mva, buses, branches
 
 
-def _load_excel(path):
-    # TODO: implement
-    return None
+def _load_excel(path, entity_map):
+    wb = xlrd.open_workbook(path, on_demand=True)
+
+    buses = []
+    sheet = wb.sheet_by_index(0)
+    for i in range(1, sheet.nrows):
+        if sheet.cell_value(i, 0).startswith('#'):
+            continue
+
+        bus_id, bus_type, base_kv = sheet.row_values(i)[:3]
+        idx = len(buses)
+        buses.append((idx, bus_type, base_kv))
+        etype = 'RefBus' if bus_type == 'REF' else 'PQBus'
+        entity_map[bus_id] = {
+            'etype': etype,
+            'idx': idx,
+            'static': {
+                'vl': base_kv,
+            },
+        }
+
+    branches = []
+    sheet = wb.sheet_by_index(1)
+    for i in range(1, sheet.nrows):
+        if sheet.cell_value(i, 0).startswith('#'):
+            continue
+
+        bid, from_bus, to_bus, btype, l = sheet.row_values(i)[:5]
+        assert from_bus in entity_map, from_bus
+        assert to_bus in entity_map, from_bus
+
+        idx = len(branches)
+        f_idx = entity_map[from_bus]['idx']
+        t_idx = entity_map[to_bus]['idx']
+
+        try:
+            # Calculate some branch parameters
+            branch = rdb.lines[btype]
+            base_kv = entity_map[from_bus]['static']['vl']  # kV
+            Smax = base_kv * branch.i / 1000  # MVA
+            b = (omega * power_factor * branch.c / (10 ** 9))  # b [Ohm^-1], c [nF]  # NOQA
+
+            # Update entiy map
+            entity_map[bid] = {'etype': 'Branch', 'idx': idx, 'static': {
+                's_max': Smax,
+                'i_max': branch.i,
+                'length': l,
+                'r_per_km': branch.r,
+                'x_per_km': branch.x,
+                'c_per_km': branch.c,
+            }, 'related': [from_bus, to_bus]}
+        except KeyError:
+            branch = rdb.transformers[btype]
+            b = 0
+            Smax = branch.sr
+
+            # Update entity map with etype and static data
+            entity_map[bid] = {'etype': 'Transformer', 'idx': idx, 'static': {
+                'S_max': branch.sr,
+                'P_loss': branch.pl,
+                'U_p': entity_map[from_bus]['static']['vl'],
+                'U_s': entity_map[to_bus]['static']['vl'],
+            }, 'related': [from_bus, to_bus]}
+
+        branches.append((f_idx, t_idx, l, branch.r, branch.x, b, Smax))
+
+    base_mva = rdb.base_mva.get(buses[0][BUS_BASE_KV], 1)
+
+    return base_mva, buses, branches
 
 
-def _get_buses_old(raw_case, entity_map):
+def _get_buses(raw_case, entity_map):
     """Create the PP bus and generator lists and update the *entity_map* with
     all buses.
 
@@ -159,6 +231,63 @@ def _get_buses_old(raw_case, entity_map):
     return buses
 
 
+def _get_branches(raw_case, entity_map):
+    branches = []
+    buses = raw_case['bus']
+    for i, (tid, from_bus, to_bus, ttype) in enumerate(raw_case['trafo']):
+        assert from_bus in entity_map, from_bus
+        assert to_bus in entity_map, from_bus
+
+        idx = len(branches)
+        trafo = rdb.transformers[ttype]
+        f_idx = entity_map[from_bus]['idx']
+        t_idx = entity_map[to_bus]['idx']
+        from_bus = buses[f_idx]  # Get bus from JSON
+        to_bus = buses[t_idx]  # Get bus from JSON
+
+        # Update entity map with etype and static data
+        entity_map[tid] = {'etype': 'Transformer', 'idx': idx, 'static': {
+            'S_max': trafo.sr,
+            'P_loss': trafo.pl,
+            'U_p': from_bus[BUS_BASE_KV],
+            'U_s': to_bus[BUS_BASE_KV],
+        }, 'related': [from_bus[BUS_NAME], to_bus[BUS_NAME]]}
+
+        branches.append((f_idx, t_idx, 1, trafo.r, trafo.x, 0, trafo.sr))
+
+    # Load branches
+    for i, (bid, from_bus, to_bus, btype, l) in enumerate(raw_case['branch']):
+        assert from_bus in entity_map, from_bus
+        assert to_bus in entity_map, to_bus
+
+        idx = len(branches)
+        f_idx = entity_map[from_bus]['idx']
+        t_idx = entity_map[to_bus]['idx']
+        from_bus = buses[f_idx]  # Get bus from JSON
+        to_bus = buses[t_idx]  # Get bus from JSON
+
+        # Calculate some branch parameters
+        line = rdb.lines[btype]
+        base_kv = from_bus[BUS_BASE_KV]  # kV
+        Smax = base_kv * line.i / 1000  # MVA
+        b = (omega * power_factor * line.c / (10 ** 9))  # b [Ohm^-1], c [nF]
+
+        # Update entiy map
+        entity_map[bid] = {'etype': 'Branch', 'idx': idx, 'static': {
+            's_max': Smax,
+            'i_max': line.i,
+            'length': l,
+            'r_per_km': line.r,
+            'x_per_km': line.x,
+            'c_per_km': line.c,
+        }, 'related': [from_bus[BUS_NAME], to_bus[BUS_NAME]]}
+
+        # Create branch
+        branches.append((f_idx, t_idx, l, line.r, line.x, b, Smax))
+
+    return branches
+
+
 def _get_branches_old(raw_case, entity_map):
     """Parse the transformers and branches, return the list of branches for
     PP and update the entity_map.
@@ -170,15 +299,14 @@ def _get_branches_old(raw_case, entity_map):
     # Load transformers (Imax_p and Imax_s are no longer required)
     for i, (tid, from_bus, to_bus, Sr, Uk, Pk, Imax_p, Imax_s) in enumerate(
             raw_case['trafo']):
-        if from_bus not in entity_map or to_bus not in entity_map:
-            raise ValueError('Bus "%s" or "%s" not found.' %
-                             (from_bus, to_bus))
+        assert from_bus in entity_map, from_bus
+        assert to_bus in entity_map, to_bus
 
         idx = len(branches)
-        from_bus_idx = entity_map[from_bus]['idx']
-        to_bus_idx = entity_map[to_bus]['idx']
-        from_bus = buses[from_bus_idx]  # Get bus from JSON
-        to_bus = buses[to_bus_idx]  # Get bus from JSON
+        f_idx = entity_map[from_bus]['idx']
+        t_idx = entity_map[to_bus]['idx']
+        from_bus = buses[f_idx]  # Get bus from JSON
+        to_bus = buses[t_idx]  # Get bus from JSON
 
         # Update entity map with etype and static data
         entity_map[tid] = {'etype': 'Transformer', 'idx': idx, 'static': {
@@ -186,7 +314,7 @@ def _get_branches_old(raw_case, entity_map):
             'P_loss': 0.0,  # Unkown in this format
             'U_p': from_bus[BUS_BASE_KV],
             'U_s': to_bus[BUS_BASE_KV],
-        }, 'related': [from_bus[0], to_bus[0]]}
+        }, 'related': [from_bus[BUS_NAME], to_bus[BUS_NAME]]}
 
         # Calculate resistances
         # See: Adolf J. Schwab: Elektroenergiesysteme, pp. 385,
@@ -194,23 +322,19 @@ def _get_branches_old(raw_case, entity_map):
         Us = to_bus[BUS_BASE_KV]
         Xk = (Uk * (Us ** 2)) / (100 * Sr)  # Ohm
         Rk = (Pk * (Xk ** 2)) / ((Uk * Us / 100) ** 2)  # Ohm
-        branches.append((from_bus_idx, to_bus_idx, 1, Rk, Xk, 0, Sr))
+        branches.append((f_idx, t_idx, 1, Rk, Xk, 0, Sr))
 
     # Load branches
     for i, (bid, from_bus, to_bus, l, r, x, c, Imax) in enumerate(
             raw_case['branch']):
-        if from_bus not in entity_map:
-            raise ValueError('From "%s" not found for branch "%s"' %
-                             (from_bus, bid))
-        if to_bus not in entity_map:
-            raise ValueError('To "%s" not found for branch "%s"' %
-                             (to_bus, bid))
+        assert from_bus in entity_map, from_bus
+        assert to_bus in entity_map, to_bus
 
         idx = len(branches)
-        from_bus_idx = entity_map[from_bus]['idx']
-        to_bus_idx = entity_map[to_bus]['idx']
-        from_bus = buses[from_bus_idx]  # Get bus from JSON
-        to_bus = buses[to_bus_idx]  # Get bus from JSON
+        f_idx = entity_map[from_bus]['idx']
+        t_idx = entity_map[to_bus]['idx']
+        from_bus = buses[f_idx]  # Get bus from JSON
+        to_bus = buses[t_idx]  # Get bus from JSON
 
         # Calculate some branch parameters
         base_kv = from_bus[BUS_BASE_KV]  # kV
@@ -225,12 +349,12 @@ def _get_branches_old(raw_case, entity_map):
             'r_per_km': r,
             'x_per_km': x,
             'c_per_km': c,
-        }, 'related': [from_bus[0], to_bus[0]]}
+        }, 'related': [from_bus[BUS_NAME], to_bus[BUS_NAME]]}
 
         # Create branch
-        branches.append((from_bus_idx, to_bus_idx, l, r, x, b, Smax))
+        branches.append((f_idx, t_idx, l, r, x, b, Smax))
 
-    return numpy.array(branches)
+    return branches
 
 
 def _make_ppc(base_mva, bus_data, branch_data):

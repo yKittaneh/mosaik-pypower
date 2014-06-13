@@ -162,6 +162,6 @@ def test_mosaik():
         },
         'Grid': {
             'P': 1.230925 * MW * pos_loads,
-            'Q': 0.441471 * MW,
+            'Q': 0.441486 * MW,
         },
     }, ndigits=0)
