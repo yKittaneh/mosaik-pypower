@@ -4,7 +4,7 @@ mosaik-api==2.0a1
 numpy==1.8.1
 py==1.4.20
 pytest==2.5.2
-scipy==0.13.3
+scipy==0.14.0
 simpy==3.0.4
 simpy.io==0.1
 tox==1.7.1

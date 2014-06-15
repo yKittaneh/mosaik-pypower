@@ -5,7 +5,7 @@ Database of operating resources.
 from collections import namedtuple
 
 
-Transformer = namedtuple('Transformer', 'sr, pl, r, x, b, i, taps')
+Transformer = namedtuple('Transformer', 'sr, pl, r, x, taps')
 """Transformer with *S_r* [MVA], *P_loss* [kW], *R* [Ω] as *r*, *X* [Ω] as *x*,
 *B* [F] as *b* and *I_max* [A] as *i*."""
 
@@ -16,16 +16,16 @@ Line = namedtuple('Line', 'r, x, c, i')
 
 transformers = {
     # High to medium voltage
-    'TRAFO_31':  Transformer(31.5, 120, 0.0443, 1.7143, 0, 0,
+    'TRAFO_31':  Transformer(31.5, 120, 0.0443, 1.7143,
                              {(i - 4): (0.92 + i * 0.02) for i in range(9)}),
-    'TRAFO_40':  Transformer(40, 160, 0.035, 1.35, 0, 0,
+    'TRAFO_40':  Transformer(40,   160, 0.0350, 1.35,
                              {(i - 4): (0.92 + i * 0.02) for i in range(9)}),
 
     # Medium to low voltage
-    'TRAFO_200': Transformer(0.20, 3.6, 0.00960, 0.02432, 0, 0, {0: 1.0}),
-    'TRAFO_250': Transformer(0.25, 3.6, 0.00960, 0.02432, 0, 0, {0: 1.0}),
-    'TRAFO_400': Transformer(0.40, 3.6, 0.00520, 0.01800, 0, 0, {0: 1.0}),
-    'TRAFO_630': Transformer(0.63, 3.6, 0.00305, 0.01194, 0, 0, {0: 1.0}),
+    'TRAFO_200': Transformer(0.20, 3.6, 0.00960, 0.02432, {0: 1.0}),
+    'TRAFO_250': Transformer(0.25, 3.6, 0.00960, 0.02432, {0: 1.0}),
+    'TRAFO_400': Transformer(0.40, 3.6, 0.00520, 0.01800, {0: 1.0}),
+    'TRAFO_630': Transformer(0.63, 3.6, 0.00305, 0.01194, {0: 1.0}),
 }
 lines = {
     # Medium voltage
