@@ -148,13 +148,14 @@ class PyPower(mosaik_api.Simulator):
         for eid, attrs in inputs.items():
             idx = self._entities[eid]['idx']
             etype = self._entities[eid]['etype']
+            static = self._entities[eid]['static']
             for name, values in attrs.items():
                 # values is a list of p/q values, sum them up to a single value
                 attrs[name] = sum(float(v) for v in values)
                 if name == 'P':
                     attrs[name] *= self.pos_loads
 
-            model.set_inputs(self._ppc, etype, idx, attrs)
+            model.set_inputs(self._ppc, etype, idx, attrs, static)
 
         res = model.perform_powerflow(self._ppc)
         self._cache = model.update_cache(res, self._entities)

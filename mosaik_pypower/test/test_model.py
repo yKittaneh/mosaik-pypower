@@ -151,13 +151,13 @@ def test_set_inputs(ppc):
         {'P': 7000000, 'Q': 8000000},
     ]
     for i, data in enumerate(inputs):
-        model.set_inputs(ppc, 'PQBus', i, data)
+        model.set_inputs(ppc, 'PQBus', i, data, {})
         assert ppc['bus'][i][idx_bus.PD] == data['P'] / 3000000
         assert ppc['bus'][i][idx_bus.QD] == data['Q'] / 3000000
 
 
 def test_set_inputs_wrong_etype(ppc):
-    pytest.raises(ValueError, model.set_inputs, ppc, 'foo', 0, None)
+    pytest.raises(ValueError, model.set_inputs, ppc, 'foo', 0, None, None)
 
 
 def test_perform_powerflow(ppc):
@@ -169,7 +169,10 @@ def test_perform_powerflow(ppc):
         {'P':   850000, 'Q':  530000},
     ]
     for i, data in enumerate(inputs):
-        model.set_inputs(ppc, 'PQBus', i, data)
+        model.set_inputs(ppc, 'PQBus', i, data, {})
+
+    model.set_inputs(ppc, 'Transformer', 0, {'tap_turn': 0},
+                     {'taps': {0: 1.0}})
 
     res = model.perform_powerflow(ppc)
 

@@ -66,12 +66,18 @@ def reset_inputs(case):
         bus[idx_bus.QD] = 0
 
 
-def set_inputs(case, etype, idx, data):
+def set_inputs(case, etype, idx, data, static):
     if etype == 'PQBus':
         case['bus'][idx][idx_bus.PD] = data['P'] / BUS_PQ_FACTOR
         if 'Q' in data:
             # Some models may not provide a Q
             case['bus'][idx][idx_bus.QD] = data['Q'] / BUS_PQ_FACTOR
+    elif etype in ('PQBus', 'Transformer'):
+        if 'tap_turn' in data and etype == 'Transformer':
+            tap = 1 / static['taps'][data['tap_turn']]
+            case['branch'][idx][idx_brch.TAP] = tap
+        if 'online' in data:
+            case['branch'][idx][idx_brch.BR_STATUS] = int(data['online'])
     else:
         raise ValueError('etype %s unknown' % etype)
 
