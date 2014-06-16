@@ -25,22 +25,58 @@ meta = {
         'RefBus': {
             'public': False,
             'params': [],
-            'attrs': ['P', 'Q'],  # [W, VAr]
+            'attrs': [
+                'P',   # Active power [W]
+                'Q',   # Reactive power [VAr]
+                'Vl',  # Nominal bus voltage [kV]
+                'Vm',  # Voltage magnitude [kV]
+                'Va',  # Voltage angle [deg]
+            ]
         },
         'PQBus': {
             'public': False,
             'params': [],
-            'attrs': ['P', 'Q', 'Vm', 'Va'],  # [W, VAr, V, deg]
+            'attrs': [
+                'P',   # Active power [W]
+                'Q',   # Reactive power [VAr]
+                'Vl',  # Nominal bus voltage [kV]
+                'Vm',  # Voltage magnitude [kV]
+                'Va',  # Voltage angle [deg]
+            ]
         },
         'Transformer': {
             'public': False,
             'params': [],
-            'attrs': ['P_from', 'Q_from', 'P_to', 'Q_to'],  # [W, VAr] * 2
+            'attrs': [
+                'P_from',    # Active power at "from" side [W]
+                'Q_from',    # Reactive power at "from" side [VAr]
+                'P_to',      # Active power at "to" side [W]
+                'Q_to',      # Reactive power at "to" side [VAr]
+                'S_r',       # Rated apparent power [MVA]
+                'P_loss',    # Active power loss [MW]
+                'U_p',       # Nominal primary voltage [kV]
+                'U_s',       # Nominal secondary voltage [kV]
+                'taps',      # Dict. of possible tap turns and their values
+                'tap_turn',  # Currently active tap turn
+            ]
         },
         'Branch': {
             'public': False,
             'params': [],
-            'attrs': ['P_from', 'Q_from', 'P_to', 'Q_to'],  # [W, VAr] * 2
+            'attrs': [
+                'P_from',    # Active power at "from" side [W]
+                'Q_from',    # Reactive power at "from" side [VAr]
+                'P_to',      # Active power at "to" side [W]
+                'Q_to',      # Reactive power at "to" side [VAr]
+                'I_real',    # Branch current (real part) [A]
+                'I_imag',    # Branch current (imaginary part) [A]
+                'S_max',     # Maximum apparent power [MVA]
+                'I_max',     # Maximum current [A]
+                'length',    # Line length [km]
+                'R_per_km',  # Resistance per unit length [Ω/km]
+                'X_per_km',  # Reactance per unit length [Ω/km]
+                'C_per_km',  # Capactity per unit length [nF/km]
+            ]
         },
     },
 }
@@ -128,9 +164,12 @@ class PyPower(mosaik_api.Simulator):
         data = {}
         for eid, attrs in outputs.items():
             for attr in attrs:
-                val = self._cache[eid][attr]
-                if attr == 'P':
-                    val *= self.pos_loads
+                try:
+                    val = self._cache[eid][attr]
+                    if attr == 'P':
+                        val *= self.pos_loads
+                except KeyError:
+                    val = self._entities[eid]['static'][attr]
                 data.setdefault(eid, {})[attr] = val
 
         return data

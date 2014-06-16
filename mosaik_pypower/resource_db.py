@@ -14,12 +14,23 @@ Line = namedtuple('Line', 'r, x, c, i')
 *I_max* [A] as *i*."""
 
 
+taps_9_002 = {
+    -4: 0.92,
+    -3: 0.94,
+    -2: 0.96,
+    -1: 0.98,
+     0: 1.0,
+     1: 1.02,
+     2: 1.04,
+     3: 1.06,
+     4: 1.08,
+}  # NOQA
+
+
 transformers = {
     # High to medium voltage
-    'TRAFO_31':  Transformer(31.5, 120, 0.0443, 1.7143,
-                             {(i - 4): (0.92 + i * 0.02) for i in range(9)}),
-    'TRAFO_40':  Transformer(40,   160, 0.0350, 1.35,
-                             {(i - 4): (0.92 + i * 0.02) for i in range(9)}),
+    'TRAFO_31':  Transformer(31.5, 120, 0.0443, 1.7143, taps_9_002),
+    'TRAFO_40':  Transformer(40,   160, 0.0350, 1.3500, taps_9_002),
 
     # Medium to low voltage
     'TRAFO_200': Transformer(0.20, 3.6, 0.00960, 0.02432, {0: 1.0}),

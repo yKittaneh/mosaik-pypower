@@ -62,53 +62,6 @@ def test_mosaik():
         ],
     }]
 
-    # assert sim.get_static_data() == {
-    #     'Grid': {'vl': 110.0},
-    #     'Bus0': {'vl': 20.0},
-    #     'Bus1': {'vl': 20.0},
-    #     'Bus2': {'vl': 20.0},
-    #     'Bus3': {'vl': 20.0},
-    #     'Trafo1': {
-    #         's_max': 40.0,
-    #         'u_p': 110,
-    #         'u_s': 20,
-    #         'i_max_p': 209.9,
-    #         'i_max_s': 1050,
-    #     },
-    #     'B_0': {
-    #         's_max': 199.98,
-    #         'i_max': 9999,
-    #         'length': 5.0,
-    #         'r_per_km': 0.125,
-    #         'x_per_km': 0.112,
-    #         'c_per_km': 300 * mf,
-    #     },
-    #     'B_1': {
-    #         's_max': 199.98,
-    #         'i_max': 9999,
-    #         'length': 3.0,
-    #         'r_per_km': 0.125,
-    #         'x_per_km': 0.112,
-    #         'c_per_km': 300 * mf,
-    #     },
-    #     'B_2': {
-    #         's_max': 199.98,
-    #         'i_max': 9999,
-    #         'length': 2.0,
-    #         'r_per_km': 0.125,
-    #         'x_per_km': 0.112,
-    #         'c_per_km': 300 * mf,
-    #     },
-    #     'B_3': {
-    #         's_max': 199.98,
-    #         'i_max': 9999,
-    #         'length': 0.3,
-    #         'r_per_km': 0.125,
-    #         'x_per_km': 0.112,
-    #         'c_per_km': 300 * mf,
-    #     },
-    # }
-
     data = {
         'Bus0': {'P': [1.76], 'Q': [.95]},
         'Bus1': {'P': [.8, -.2], 'Q': [.2, 0]},
@@ -123,18 +76,16 @@ def test_mosaik():
             if k == 'P':
                 d[k] = [x * pos_loads for x in d[k]]
 
-    print('input', data)
     next_step = sim.step(0, data)
     assert next_step == 60
 
     data = sim.get_data({
-        'Grid': ['P', 'Q'],
+        'Grid': ['P', 'Q', 'Vl'],
         'Bus0': ['P', 'Q', 'Vm', 'Va'],
         'Bus1': ['P', 'Q', 'Vm', 'Va'],
         'Bus2': ['P', 'Q', 'Vm', 'Va'],
         'Bus3': ['P', 'Q', 'Vm', 'Va'],
     })
-    print(data)
     assert all_close(data, {
         'Bus0': {
             'Vm': 19.999 * kV,
@@ -163,5 +114,6 @@ def test_mosaik():
         'Grid': {
             'P': 1.230925 * MW * pos_loads,
             'Q': 0.441486 * MW,
+            'Vl': 110,
         },
     }, ndigits=0)

@@ -60,7 +60,7 @@ def test_load_case(filename):
     ]))
 
     branchdata = np.array([
-        [0., 1., 8.67768595e-05, 3.34710744e-03, 0.00000000e+00, 40.00, 40.00, 40.00, 0., 0., 1., -360, 360],  # NOQA
+        [0., 1., 8.67768595e-05, 3.34710744e-03, 0.00000000e+00, 40.00, 40.00, 40.00, 1., 0., 1., -360, 360],  # NOQA
         [1., 2., 6.07500000e-02, 4.46250000e-02, 1.55194677e-02,  7.24,  7.24,  7.24, 0., 0., 1., -360, 360],  # NOQA
         [1., 3., 3.64500000e-02, 2.67750000e-02, 9.31168063e-03,  7.24,  7.24,  7.24, 0., 0., 1., -360, 360],  # NOQA
         [2., 4., 2.43000000e-02, 1.78500000e-02, 6.20778708e-03,  7.24,  7.24,  7.24, 0., 0., 1., -360, 360],  # NOQA
@@ -72,50 +72,56 @@ def test_load_case(filename):
     # The old data format does not contain a value for P_loss
     if filename.endswith('test_case_b.old.json'):
         emap['Trafo1']['static']['P_loss'] = 160
+        emap['Trafo1']['static']['taps'] = {-4: 0.92, -3: 0.94, -2: 0.96,
+                                            -1: 0.98, 0: 1.0, 1: 1.02, 2: 1.04,
+                                            3: 1.06, 4: 1.08}
 
     assert emap == {
-        'Grid': {'etype': 'RefBus', 'idx': 0, 'static': {'vl': 110.0}},
-        'Bus0': {'etype': 'PQBus', 'idx': 1, 'static': {'vl': 20.0}},
-        'Bus1': {'etype': 'PQBus', 'idx': 2, 'static': {'vl': 20.0}},
-        'Bus2': {'etype': 'PQBus', 'idx': 3, 'static': {'vl': 20.0}},
-        'Bus3': {'etype': 'PQBus', 'idx': 4, 'static': {'vl': 20.0}},
+        'Grid': {'etype': 'RefBus', 'idx': 0, 'static': {'Vl': 110.0}},
+        'Bus0': {'etype': 'PQBus', 'idx': 1, 'static': {'Vl': 20.0}},
+        'Bus1': {'etype': 'PQBus', 'idx': 2, 'static': {'Vl': 20.0}},
+        'Bus2': {'etype': 'PQBus', 'idx': 3, 'static': {'Vl': 20.0}},
+        'Bus3': {'etype': 'PQBus', 'idx': 4, 'static': {'Vl': 20.0}},
         'Trafo1': {'etype': 'Transformer', 'idx': 0, 'static': {
-            'S_max': 40.0,
+            'S_r': 40.0,
             'P_loss': 160,
             'U_p': 110,
             'U_s': 20,
+            'taps': {-4: 0.92, -3: 0.94, -2: 0.96, -1: 0.98, 0: 1.0, 1: 1.02,
+                     2: 1.04, 3: 1.06, 4: 1.08},
+            'tap_turn': 0,
         }, 'related': ['Grid', 'Bus0']},
         'B_0': {'etype': 'Branch', 'idx': 1, 'static': {
-            's_max': 7.24,
-            'i_max': 362,
+            'S_max': 7.24,
+            'I_max': 362,
             'length': 5.0,
-            'r_per_km': 0.162,
-            'x_per_km': 0.119,
-            'c_per_km': 247,
+            'R_per_km': 0.162,
+            'X_per_km': 0.119,
+            'C_per_km': 247,
         }, 'related': ['Bus0', 'Bus1']},
         'B_1': {'etype': 'Branch', 'idx': 2, 'static': {
-            's_max': 7.24,
-            'i_max': 362,
+            'S_max': 7.24,
+            'I_max': 362,
             'length': 3.0,
-            'r_per_km': 0.162,
-            'x_per_km': 0.119,
-            'c_per_km': 247,
+            'R_per_km': 0.162,
+            'X_per_km': 0.119,
+            'C_per_km': 247,
         }, 'related': ['Bus0', 'Bus2']},
         'B_2': {'etype': 'Branch', 'idx': 3, 'static': {
-            's_max': 7.24,
-            'i_max': 362,
+            'S_max': 7.24,
+            'I_max': 362,
             'length': 2.0,
-            'r_per_km': 0.162,
-            'x_per_km': 0.119,
-            'c_per_km': 247,
+            'R_per_km': 0.162,
+            'X_per_km': 0.119,
+            'C_per_km': 247,
         }, 'related': ['Bus1', 'Bus3']},
         'B_3': {'etype': 'Branch', 'idx': 4, 'static': {
-            's_max': 7.24,
-            'i_max': 362,
+            'S_max': 7.24,
+            'I_max': 362,
             'length': 0.3,
-            'r_per_km': 0.162,
-            'x_per_km': 0.119,
-            'c_per_km': 247,
+            'R_per_km': 0.162,
+            'X_per_km': 0.119,
+            'C_per_km': 247,
         }, 'related': ['Bus2', 'Bus3']},
     }
 
