@@ -71,57 +71,57 @@ def test_load_case(filename):
 
     # The old data format does not contain a value for P_loss
     if filename.endswith('test_case_b.old.json'):
-        emap['Trafo1']['static']['P_loss'] = 160
+        emap['Trafo1']['static']['P_loss'] = 160000
         emap['Trafo1']['static']['taps'] = {-4: 0.92, -3: 0.94, -2: 0.96,
                                             -1: 0.98, 0: 1.0, 1: 1.02, 2: 1.04,
                                             3: 1.06, 4: 1.08}
 
     assert emap == {
-        'Grid': {'etype': 'RefBus', 'idx': 0, 'static': {'Vl': 110.0}},
-        'Bus0': {'etype': 'PQBus', 'idx': 1, 'static': {'Vl': 20.0}},
-        'Bus1': {'etype': 'PQBus', 'idx': 2, 'static': {'Vl': 20.0}},
-        'Bus2': {'etype': 'PQBus', 'idx': 3, 'static': {'Vl': 20.0}},
-        'Bus3': {'etype': 'PQBus', 'idx': 4, 'static': {'Vl': 20.0}},
+        'Grid': {'etype': 'RefBus', 'idx': 0, 'static': {'Vl': 110000}},
+        'Bus0': {'etype': 'PQBus', 'idx': 1, 'static': {'Vl': 20000}},
+        'Bus1': {'etype': 'PQBus', 'idx': 2, 'static': {'Vl': 20000}},
+        'Bus2': {'etype': 'PQBus', 'idx': 3, 'static': {'Vl': 20000}},
+        'Bus3': {'etype': 'PQBus', 'idx': 4, 'static': {'Vl': 20000}},
         'Trafo1': {'etype': 'Transformer', 'idx': 0, 'static': {
-            'S_r': 40.0,
-            'P_loss': 160,
-            'U_p': 110,
-            'U_s': 20,
+            'S_r': 40000000,
+            'P_loss': 160000,
+            'U_p': 110000,
+            'U_s': 20000,
             'taps': {-4: 0.92, -3: 0.94, -2: 0.96, -1: 0.98, 0: 1.0, 1: 1.02,
                      2: 1.04, 3: 1.06, 4: 1.08},
             'tap_turn': 0,
         }, 'related': ['Grid', 'Bus0']},
         'B_0': {'etype': 'Branch', 'idx': 1, 'static': {
-            'S_max': 7.24,
+            'S_max': 7240000,
             'I_max': 362,
             'length': 5.0,
             'R_per_km': 0.162,
             'X_per_km': 0.119,
-            'C_per_km': 247,
+            'C_per_km': 0.000000247,
         }, 'related': ['Bus0', 'Bus1']},
         'B_1': {'etype': 'Branch', 'idx': 2, 'static': {
-            'S_max': 7.24,
+            'S_max': 7240000,
             'I_max': 362,
             'length': 3.0,
             'R_per_km': 0.162,
             'X_per_km': 0.119,
-            'C_per_km': 247,
+            'C_per_km': 0.000000247,
         }, 'related': ['Bus0', 'Bus2']},
         'B_2': {'etype': 'Branch', 'idx': 3, 'static': {
-            'S_max': 7.24,
+            'S_max': 7240000,
             'I_max': 362,
             'length': 2.0,
             'R_per_km': 0.162,
             'X_per_km': 0.119,
-            'C_per_km': 247,
+            'C_per_km': 0.000000247,
         }, 'related': ['Bus1', 'Bus3']},
         'B_3': {'etype': 'Branch', 'idx': 4, 'static': {
-            'S_max': 7.24,
+            'S_max': 7240000,
             'I_max': 362,
             'length': 0.3,
             'R_per_km': 0.162,
             'X_per_km': 0.119,
-            'C_per_km': 247,
+            'C_per_km': 0.000000247,
         }, 'related': ['Bus2', 'Bus3']},
     }
 
@@ -203,7 +203,7 @@ def test_update_chache(ppc_eidmap):
             data[attr] = round(val, 1)
 
     assert cache == {
-        'Grid': {'P': 1230925.2, 'Q': 441485.7},
+        'Grid': {'P': 1230925.2, 'Q': 441485.7, 'Va': 0.0, 'Vm': 110000},
         'Bus0': {'P': 1760000.0, 'Q': 950000.0, 'Va': -0.0, 'Vm': 19998.9},
         'Bus1': {'P': 600000.0, 'Q': 200000.0, 'Va': -0.0, 'Vm': 20000.4},
         'Bus2': {'P': -1980000.0, 'Q': -280000.0, 'Va': 0.0, 'Vm': 20013.4},

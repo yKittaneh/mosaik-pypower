@@ -28,8 +28,8 @@ meta = {
             'attrs': [
                 'P',   # Active power [W]
                 'Q',   # Reactive power [VAr]
-                'Vl',  # Nominal bus voltage [kV]
-                'Vm',  # Voltage magnitude [kV]
+                'Vl',  # Nominal bus voltage [V]
+                'Vm',  # Voltage magnitude [V]
                 'Va',  # Voltage angle [deg]
             ]
         },
@@ -39,8 +39,8 @@ meta = {
             'attrs': [
                 'P',   # Active power [W]
                 'Q',   # Reactive power [VAr]
-                'Vl',  # Nominal bus voltage [kV]
-                'Vm',  # Voltage magnitude [kV]
+                'Vl',  # Nominal bus voltage [V]
+                'Vm',  # Voltage magnitude [V]
                 'Va',  # Voltage angle [deg]
             ]
         },
@@ -52,10 +52,10 @@ meta = {
                 'Q_from',    # Reactive power at "from" side [VAr]
                 'P_to',      # Active power at "to" side [W]
                 'Q_to',      # Reactive power at "to" side [VAr]
-                'S_r',       # Rated apparent power [MVA]
-                'P_loss',    # Active power loss [MW]
-                'U_p',       # Nominal primary voltage [kV]
-                'U_s',       # Nominal secondary voltage [kV]
+                'S_r',       # Rated apparent power [VA]
+                'P_loss',    # Active power loss [W]
+                'U_p',       # Nominal primary voltage [V]
+                'U_s',       # Nominal secondary voltage [V]
                 'taps',      # Dict. of possible tap turns and their values
                 'tap_turn',  # Currently active tap turn
             ]
@@ -70,12 +70,12 @@ meta = {
                 'Q_to',      # Reactive power at "to" side [VAr]
                 'I_real',    # Branch current (real part) [A]
                 'I_imag',    # Branch current (imaginary part) [A]
-                'S_max',     # Maximum apparent power [MVA]
+                'S_max',     # Maximum apparent power [VA]
                 'I_max',     # Maximum current [A]
                 'length',    # Line length [km]
                 'R_per_km',  # Resistance per unit length [Ω/km]
                 'X_per_km',  # Reactance per unit length [Ω/km]
-                'C_per_km',  # Capactity per unit length [nF/km]
+                'C_per_km',  # Capactity per unit length [F/km]
             ]
         },
     },

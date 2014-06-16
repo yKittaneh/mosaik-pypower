@@ -32,7 +32,6 @@ BUS_TYPE = 1
 BUS_BASE_KV = 2
 
 BUS_PQ_FACTOR = power_factor * 1000 ** 2  # from MW to W
-REFBUS_PQ_FACTOR = power_factor * 1000 ** 2  # from MW to W
 BRANCH_PQ_FACTOR = power_factor * 1000 ** 2  # from MW to W
 
 
@@ -91,31 +90,29 @@ def update_cache(case, entity_map):
         data = {}
 
         if case['success']:
-            if etype == 'RefBus':  # is internally a bus
-                data['P'] = case['gen'][idx][idx_gen.PG] * REFBUS_PQ_FACTOR
-                data['Q'] = case['gen'][idx][idx_gen.QG] * REFBUS_PQ_FACTOR
+            if etype == 'RefBus':
+                data['P'] = case['gen'][idx][idx_gen.PG] * BUS_PQ_FACTOR
+                data['Q'] = case['gen'][idx][idx_gen.QG] * BUS_PQ_FACTOR
+                data['Vm'] = case['bus'][idx][idx_bus.VM] * attrs['static']['Vl']  # NOQA
+                data['Va'] = case['bus'][idx][idx_bus.VA]
             elif etype == 'PQBus':
                 data['P'] = case['bus'][idx][idx_bus.PD] * BUS_PQ_FACTOR
                 data['Q'] = case['bus'][idx][idx_bus.QD] * BUS_PQ_FACTOR
-                base_kv = case['bus'][idx][idx_bus.BASE_KV]
-                data['Vm'] = case['bus'][idx][idx_bus.VM] * attrs['static']['Vl'] * 1000  # NOQA
+                data['Vm'] = case['bus'][idx][idx_bus.VM] * attrs['static']['Vl']  # NOQA
                 data['Va'] = case['bus'][idx][idx_bus.VA]
-            elif etype == 'Branch' or etype == 'Transformer':
+            elif etype in ('Branch', 'Transformer'):
                 data['P_from'] = case['branch'][idx][idx_brch.PF] * BRANCH_PQ_FACTOR  # NOQA
                 data['Q_from'] = case['branch'][idx][idx_brch.QF] * BRANCH_PQ_FACTOR  # NOQA
                 data['P_to'] = case['branch'][idx][idx_brch.PT] * BRANCH_PQ_FACTOR  # NOQA
                 data['Q_to'] = case['branch'][idx][idx_brch.QT] * BRANCH_PQ_FACTOR  # NOQA
         else:
             # Failed to converge.
-            if etype == 'RefBus':
-                data['P'] = float('nan')
-                data['Q'] = float('nan')
-            elif etype == 'PQBus':
+            if etype in ('RefBus', 'PQBus'):
                 data['P'] = float('nan')
                 data['Q'] = float('nan')
                 data['Vm'] = float('nan')
                 data['Va'] = float('nan')
-            elif etype == 'Branch' or etype == 'Transformer':
+            elif etype in ('Branch', 'Transformer'):
                 data['P_from'] = float('nan')
                 data['Q_from'] = float('nan')
                 data['P_to'] = float('nan')
@@ -134,7 +131,7 @@ def _get_buses(loader, raw_case, entity_map):
             'etype': etype,
             'idx': idx,
             'static': {
-                'Vl': base_kv,
+                'Vl': base_kv * 1000,  # From [kV] to [V]
             },
         }
     return buses
@@ -157,8 +154,8 @@ def _get_branches(loader, raw_case, entity_map):
 
             # Update entity map with etype and static data
             entity_map[bid] = {'etype': 'Transformer', 'idx': idx, 'static': {
-                'S_r': s_max,
-                'P_loss': p_loss,
+                'S_r': s_max * (10 ** 6),  # From [MVA] to [VA]
+                'P_loss': p_loss * 1000,  # From [kW] to [W]
                 'U_p': entity_map[fbus]['static']['Vl'],
                 'U_s': entity_map[tbus]['static']['Vl'],
                 'taps': taps,
@@ -167,9 +164,10 @@ def _get_branches(loader, raw_case, entity_map):
 
         else:
             r, x, c, i_max = bdata
-            b = (omega * power_factor * c / (10 ** 9))  # b [Ohm^-1], c [nF]
-            base_kv = entity_map[fbus]['static']['Vl']  # kV
-            s_max = base_kv * i_max / 1000  # MVA
+            c /= (10 ** 9)  # From [nF] to [F]
+            b = (omega * power_factor * c)  # b [Ohm^-1], c [F]
+            base_v = entity_map[fbus]['static']['Vl'] # [V]
+            s_max = base_v * i_max  # [VA]
             tap = 0
             entity_map[bid] = {'etype': 'Branch', 'idx': idx, 'static': {
                 'S_max': s_max,
@@ -179,6 +177,7 @@ def _get_branches(loader, raw_case, entity_map):
                 'X_per_km': x,
                 'C_per_km': c,
             }, 'related': [fbus, tbus]}
+            s_max /= (10 ** 6)  # From [VA] to [MVA]
 
         branches.append((f_idx, t_idx, length, r, x, b, s_max, tap))
     return branches
@@ -235,7 +234,7 @@ class JSON:
             for tid, fbus, tbus, Sr, Uk, Pk, _, _ in raw_case['trafo']:
                 # Calculate resistances; See: Adolf J. Schwab:
                 # Elektroenergiesysteme, pp. 385, 3rd edition, 2012
-                Us = entity_map[tbus]['static']['Vl']  # kV
+                Us = entity_map[tbus]['static']['Vl'] / 1000  # kV
                 Xk = (Uk * (Us ** 2)) / (100 * Sr)  # Ohm
                 Rk = (Pk * (Xk ** 2)) / ((Uk * Us / 100) ** 2)  # Ohm
 
