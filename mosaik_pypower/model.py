@@ -31,8 +31,8 @@ BUS_NAME = 0
 BUS_TYPE = 1
 BUS_BASE_KV = 2
 
-BUS_PQ_FACTOR = power_factor * 1000 ** 2  # from MW to W
-BRANCH_PQ_FACTOR = power_factor * 1000 ** 2  # from MW to W
+BUS_PQ_FACTOR = power_factor * 1e6  # from MW to W
+BRANCH_PQ_FACTOR = power_factor * 1e6  # from MW to W
 
 
 def load_case(path):
@@ -91,20 +91,45 @@ def update_cache(case, entity_map):
 
         if case['success']:
             if etype == 'RefBus':
-                data['P'] = case['gen'][idx][idx_gen.PG] * BUS_PQ_FACTOR
-                data['Q'] = case['gen'][idx][idx_gen.QG] * BUS_PQ_FACTOR
-                data['Vm'] = case['bus'][idx][idx_bus.VM] * attrs['static']['Vl']  # NOQA
-                data['Va'] = case['bus'][idx][idx_bus.VA]
+                gen = case['gen'][idx]
+                bus = case['bus'][idx]
+                data['P'] = gen[idx_gen.PG] * BUS_PQ_FACTOR
+                data['Q'] = gen[idx_gen.QG] * BUS_PQ_FACTOR
+                data['Vm'] = bus[idx_bus.VM] * attrs['static']['Vl']
+                data['Va'] = bus[idx_bus.VA]
             elif etype == 'PQBus':
-                data['P'] = case['bus'][idx][idx_bus.PD] * BUS_PQ_FACTOR
-                data['Q'] = case['bus'][idx][idx_bus.QD] * BUS_PQ_FACTOR
-                data['Vm'] = case['bus'][idx][idx_bus.VM] * attrs['static']['Vl']  # NOQA
-                data['Va'] = case['bus'][idx][idx_bus.VA]
+                bus = case['bus'][idx]
+                data['P'] = bus[idx_bus.PD] * BUS_PQ_FACTOR
+                data['Q'] = bus[idx_bus.QD] * BUS_PQ_FACTOR
+                data['Vm'] = bus[idx_bus.VM] * attrs['static']['Vl']
+                data['Va'] = bus[idx_bus.VA]
             elif etype in ('Branch', 'Transformer'):
-                data['P_from'] = case['branch'][idx][idx_brch.PF] * BRANCH_PQ_FACTOR  # NOQA
-                data['Q_from'] = case['branch'][idx][idx_brch.QF] * BRANCH_PQ_FACTOR  # NOQA
-                data['P_to'] = case['branch'][idx][idx_brch.PT] * BRANCH_PQ_FACTOR  # NOQA
-                data['Q_to'] = case['branch'][idx][idx_brch.QT] * BRANCH_PQ_FACTOR  # NOQA
+                branch = case['branch'][idx]
+
+                # Compute complex current for branches
+                if etype == 'Branch':
+                    fbus = case['bus'][branch[idx_brch.F_BUS]]
+                    tbus = case['bus'][branch[idx_brch.T_BUS]]
+                    fbus_v = fbus[idx_bus.VM]
+                    tbus_v = tbus[idx_bus.VM]
+                    base_kv = fbus[idx_bus.BASE_KV]
+
+                    # Use side with higher voltage to calculate I
+                    if fbus_v >= tbus_v:
+                        ir = branch[idx_brch.PF] / fbus_v
+                        ii = branch[idx_brch.QF] / tbus_v
+                    else:
+                        ir = branch[idx_brch.PT] / tbus_v
+                        ii = branch[idx_brch.QT] / tbus_v
+
+                    # ir/ii are in [MVA]; [MVA] * 1000 / [kV] = [A]
+                    data['I_real'] = ir * 1000 / base_kv
+                    data['I_imag'] = ii * 1000 / base_kv
+
+                data['P_from'] = branch[idx_brch.PF] * BRANCH_PQ_FACTOR
+                data['Q_from'] = branch[idx_brch.QF] * BRANCH_PQ_FACTOR
+                data['P_to'] = branch[idx_brch.PT] * BRANCH_PQ_FACTOR
+                data['Q_to'] = branch[idx_brch.QT] * BRANCH_PQ_FACTOR
         else:
             # Failed to converge.
             if etype in ('RefBus', 'PQBus'):
@@ -154,7 +179,7 @@ def _get_branches(loader, raw_case, entity_map):
 
             # Update entity map with etype and static data
             entity_map[bid] = {'etype': 'Transformer', 'idx': idx, 'static': {
-                'S_r': s_max * (10 ** 6),  # From [MVA] to [VA]
+                'S_r': s_max * 1e6,  # From [MVA] to [VA]
                 'P_loss': p_loss * 1000,  # From [kW] to [W]
                 'U_p': entity_map[fbus]['static']['Vl'],
                 'U_s': entity_map[tbus]['static']['Vl'],
@@ -164,7 +189,7 @@ def _get_branches(loader, raw_case, entity_map):
 
         else:
             r, x, c, i_max = bdata
-            c /= (10 ** 9)  # From [nF] to [F]
+            c /= 1e9  # From [nF] to [F]
             b = (omega * power_factor * c)  # b [Ohm^-1], c [F]
             base_v = entity_map[fbus]['static']['Vl'] # [V]
             s_max = base_v * i_max  # [VA]
@@ -177,7 +202,7 @@ def _get_branches(loader, raw_case, entity_map):
                 'X_per_km': x,
                 'C_per_km': c,
             }, 'related': [fbus, tbus]}
-            s_max /= (10 ** 6)  # From [VA] to [MVA]
+            s_max /= 1e6  # From [VA] to [MVA]
 
         branches.append((f_idx, t_idx, length, r, x, b, s_max, tap))
     return branches
