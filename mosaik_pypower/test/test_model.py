@@ -90,6 +90,7 @@ def test_load_case(filename):
             'taps': {-4: 0.92, -3: 0.94, -2: 0.96, -1: 0.98, 0: 1.0, 1: 1.02,
                      2: 1.04, 3: 1.06, 4: 1.08},
             'tap_turn': 0,
+            'online': True,
         }, 'related': ['Grid', 'Bus0']},
         'B_0': {'etype': 'Branch', 'idx': 1, 'static': {
             'S_max': 7240000,
@@ -98,6 +99,7 @@ def test_load_case(filename):
             'R_per_km': 0.162,
             'X_per_km': 0.119,
             'C_per_km': 0.000000247,
+            'online': True,
         }, 'related': ['Bus0', 'Bus1']},
         'B_1': {'etype': 'Branch', 'idx': 2, 'static': {
             'S_max': 7240000,
@@ -106,6 +108,7 @@ def test_load_case(filename):
             'R_per_km': 0.162,
             'X_per_km': 0.119,
             'C_per_km': 0.000000247,
+            'online': True,
         }, 'related': ['Bus0', 'Bus2']},
         'B_2': {'etype': 'Branch', 'idx': 3, 'static': {
             'S_max': 7240000,
@@ -114,6 +117,7 @@ def test_load_case(filename):
             'R_per_km': 0.162,
             'X_per_km': 0.119,
             'C_per_km': 0.000000247,
+            'online': True,
         }, 'related': ['Bus1', 'Bus3']},
         'B_3': {'etype': 'Branch', 'idx': 4, 'static': {
             'S_max': 7240000,
@@ -122,6 +126,7 @@ def test_load_case(filename):
             'R_per_km': 0.162,
             'X_per_km': 0.119,
             'C_per_km': 0.000000247,
+            'online': True,
         }, 'related': ['Bus2', 'Bus3']},
     }
 

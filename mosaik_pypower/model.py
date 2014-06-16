@@ -164,8 +164,8 @@ def _get_buses(loader, raw_case, entity_map):
 
 def _get_branches(loader, raw_case, entity_map):
     branches = []
-    for idx, (is_trafo, bid, fbus, tbus, length, bdata, tap_turn) in enumerate(
-            loader.branches(raw_case, entity_map)):
+    for idx, branch in enumerate(loader.branches(raw_case, entity_map)):
+        is_trafo, bid, fbus, tbus, length, bdata, online, tap_turn = branch
         assert fbus in entity_map, fbus
         assert tbus in entity_map, fbus
 
@@ -185,6 +185,7 @@ def _get_branches(loader, raw_case, entity_map):
                 'U_s': entity_map[tbus]['static']['Vl'],
                 'taps': taps,
                 'tap_turn': tap_turn,
+                'online': bool(online),
             }, 'related': [fbus, tbus]}
 
         else:
@@ -201,10 +202,11 @@ def _get_branches(loader, raw_case, entity_map):
                 'R_per_km': r,
                 'X_per_km': x,
                 'C_per_km': c,
+                'online': bool(online),
             }, 'related': [fbus, tbus]}
             s_max /= 1e6  # From [VA] to [MVA]
 
-        branches.append((f_idx, t_idx, length, r, x, b, s_max, tap))
+        branches.append((f_idx, t_idx, length, r, x, b, s_max, online, tap))
     return branches
 
 
@@ -221,11 +223,11 @@ def _make_ppc(base_mva, bus_data, branch_data):
                          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
     branches = []
-    for f, t, l, r, x, b, s_max, tap in branch_data:
+    for f, t, l, r, x, b, s_max, online, tap in branch_data:
         base_kv = buses[int(f)][idx_bus.BASE_KV]  # kV
         base_z = base_kv ** 2 / base_mva  # Ohm
         branches.append((f, t, r * l / base_z, x * l / base_z, b * l * base_z,
-                         s_max, s_max, s_max, tap, 0, 1, -360, 360))
+                         s_max, s_max, s_max, tap, 0, online, -360, 360))
 
     return {
         'baseMVA': base_mva,
@@ -263,20 +265,22 @@ class JSON:
                 Xk = (Uk * (Us ** 2)) / (100 * Sr)  # Ohm
                 Rk = (Pk * (Xk ** 2)) / ((Uk * Us / 100) ** 2)  # Ohm
 
-                yield (True, tid, fbus, tbus, 1, (Sr, 0, Rk, Xk, {0: 1.0}), 0)
+                info = (Sr, 0, Rk, Xk, {0: 1.0})
+                yield (True, tid, fbus, tbus, 1, info, 1, 0)
 
             for bid, fbus, tbus, l, r, x, c, i_max in raw_case['branch']:
-                yield (False, bid, fbus, tbus, l, (r, x, c, i_max), 0)
+                info = (r, x, c, i_max)
+                yield (False, bid, fbus, tbus, l, info, 1, 0)
 
         else:
             # New format
             for tid, fbus, tbus, ttype, online, tap in raw_case['trafo']:
                 trafo = rdb.transformers[ttype]
-                yield (True, tid, fbus, tbus, 1, trafo, tap)
+                yield (True, tid, fbus, tbus, 1, trafo, int(online), tap)
 
             for bid, fbus, tbus, btype, l, online in raw_case['branch']:
                 line = rdb.lines[btype]
-                yield (False, bid, fbus, tbus, l, line, 0)
+                yield (False, bid, fbus, tbus, l, line, int(online), 0)
 
     def base_mva(raw_case, buses):
         if 'base_mva' in raw_case:
@@ -308,13 +312,12 @@ class Excel:
 
             bid, fbus, tbus, btype, l, online, tap = sheet.row_values(i)[:7]
             try:
-                trafo = rdb.transformers[btype]
-                yield (True, bid, fbus, tbus, 1, trafo, tap)
-
+                info = rdb.transformers[btype]
+                is_trafo = True
             except KeyError:
-                # Calculate some branch parameters
-                line = rdb.lines[btype]
-                yield (False, bid, fbus, tbus, l, line, 0)
+                info = rdb.lines[btype]
+                is_trafo = False
+            yield (is_trafo, bid, fbus, tbus, l, info, online, 0)
 
     def base_mva(raw_case, buses):
         return rdb.base_mva.get(buses[0][BUS_BASE_KV], 1)

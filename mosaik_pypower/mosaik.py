@@ -76,6 +76,7 @@ meta = {
                 'R_per_km',  # Resistance per unit length [Ω/km]
                 'X_per_km',  # Reactance per unit length [Ω/km]
                 'C_per_km',  # Capactity per unit length [F/km]
+                'online',    # Boolean flag (True|False)
             ]
         },
     },
