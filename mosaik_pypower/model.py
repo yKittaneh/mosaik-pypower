@@ -156,6 +156,7 @@ def update_cache(case, entity_map):
 def _get_buses(loader, raw_case, entity_map):
     buses = []
     for idx, (bid, btype, base_kv) in enumerate(loader.buses(raw_case)):
+        bid = str(bid)
         buses.append((idx, btype, base_kv))
         etype = 'RefBus' if btype == 'REF' else 'PQBus'
         entity_map[bid] = {
@@ -175,6 +176,7 @@ def _get_branches(loader, raw_case, entity_map):
         assert fbus in entity_map, fbus
         assert tbus in entity_map, fbus
 
+        bid = str(bid)
         f_idx = entity_map[fbus]['idx']
         t_idx = entity_map[tbus]['idx']
 
@@ -305,7 +307,7 @@ class Excel:
     def buses(wb):
         sheet = wb.sheet_by_index(0)
         for i in range(1, sheet.nrows):
-            if sheet.cell_value(i, 0).startswith('#'):
+            if str(sheet.cell_value(i, 0)).startswith('#'):
                 continue
 
             yield sheet.row_values(i)[:3]
@@ -313,7 +315,7 @@ class Excel:
     def branches(wb, entity_map):
         sheet = wb.sheet_by_index(1)
         for i in range(1, sheet.nrows):
-            if sheet.cell_value(i, 0).startswith('#'):
+            if str(sheet.cell_value(i, 0)).startswith('#'):
                 continue
 
             bid, fbus, tbus, btype, l, online, tap = sheet.row_values(i)[:7]
