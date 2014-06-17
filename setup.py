@@ -18,6 +18,7 @@ setup(
         'mosaik-api>=2.0a1',
         'numpy>=1.6',
         'scipy>=0.9',
+        'xlrd>=0.9.2',
     ],
     packages=find_packages(),
     include_package_data=True,

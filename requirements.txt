@@ -10,3 +10,4 @@ simpy.io==0.1
 tox==1.7.1
 virtualenv==1.11.4
 wheel==0.23.0
+xlrd==0.9.3
