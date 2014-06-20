@@ -310,7 +310,10 @@ class Excel:
             if str(sheet.cell_value(i, 0)).startswith('#'):
                 continue
 
-            yield sheet.row_values(i)[:3]
+            bus_id, bus_type, base_kv = sheet.row_values(i)[:3]
+            if type(bus_id) is float:
+                bus_id = str(int(bus_id))
+            yield (bus_id, bus_type, base_kv)
 
     def branches(wb, entity_map):
         sheet = wb.sheet_by_index(1)
@@ -319,6 +322,8 @@ class Excel:
                 continue
 
             bid, fbus, tbus, btype, l, online, tap = sheet.row_values(i)[:7]
+            if type(bid) is float:
+                bid = str(int(bid))
             try:
                 info = rdb.transformers[btype]
                 is_trafo = True
