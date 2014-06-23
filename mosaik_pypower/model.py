@@ -19,12 +19,9 @@ from mosaik_pypower import resource_db as rdb
 # The line params that we read are for 1 of 3 wires within a cable,
 # but the loads and feed-in is meant for the complete cable, so we
 # have to divide all loads and feed-in by 3.
-# TODO: Replace with parameter to switch between line-to-line and
-# phase-to-neutral voltage.
 power_factor = 3  # Divide all incoming loads by this factor
 sqrt_3 = math.sqrt(3)
 omega = 2 * math.pi * 50  # s^-1
-
 
 # Indices for the entries of the JSON file
 BUS_NAME = 0
@@ -35,7 +32,7 @@ BUS_PQ_FACTOR = power_factor * 1e6  # from MW to W
 BRANCH_PQ_FACTOR = power_factor * 1e6  # from MW to W
 
 
-def load_case(path):
+def load_case(path, grid_idx):
     """Load the case from *path* and create a PYPOWER case and an entity map.
     """
     loaders = {
@@ -51,8 +48,8 @@ def load_case(path):
     entity_map = UniqueKeyDict()
 
     raw_case = loader.open(path)
-    buses = _get_buses(loader, raw_case, entity_map)
-    branches = _get_branches(loader, raw_case, entity_map)
+    buses = _get_buses(loader, raw_case, entity_map, grid_idx)
+    branches = _get_branches(loader, raw_case, entity_map, grid_idx)
     base_mva = loader.base_mva(raw_case, buses)
 
     ppc = _make_ppc(base_mva, buses, branches)
@@ -88,9 +85,10 @@ def perform_powerflow(case):
     return res[0]
 
 
-def update_cache(case, entity_map):
+def get_cache_entries(cases, entity_map):
     cache = {}
     for eid, attrs in entity_map.items():
+        case = case_for_eid(eid, cases)
         etype = attrs['etype']
         idx = attrs['idx']
         data = {}
@@ -153,13 +151,22 @@ def update_cache(case, entity_map):
     return cache
 
 
-def _get_buses(loader, raw_case, entity_map):
+def make_eid(name, grid_idx):
+    return '%s/%s' % (grid_idx, name)
+
+
+def case_for_eid(eid, case):
+    idx = eid.split('/')[0]
+    return case[int(idx)]
+
+
+def _get_buses(loader, raw_case, entity_map, grid_idx):
     buses = []
     for idx, (bid, btype, base_kv) in enumerate(loader.buses(raw_case)):
-        bid = str(bid)
+        eid = make_eid(bid, grid_idx)
         buses.append((idx, btype, base_kv))
         etype = 'RefBus' if btype == 'REF' else 'PQBus'
-        entity_map[bid] = {
+        entity_map[eid] = {
             'etype': etype,
             'idx': idx,
             'static': {
@@ -169,14 +176,17 @@ def _get_buses(loader, raw_case, entity_map):
     return buses
 
 
-def _get_branches(loader, raw_case, entity_map):
+def _get_branches(loader, raw_case, entity_map, grid_idx):
     branches = []
     for idx, branch in enumerate(loader.branches(raw_case, entity_map)):
         is_trafo, bid, fbus, tbus, length, bdata, online, tap_turn = branch
+        eid = make_eid(bid, grid_idx)
+        fbus = make_eid(fbus, grid_idx)
+        tbus = make_eid(tbus, grid_idx)
+
         assert fbus in entity_map, fbus
         assert tbus in entity_map, fbus
 
-        bid = str(bid)
         f_idx = entity_map[fbus]['idx']
         t_idx = entity_map[tbus]['idx']
 
@@ -186,7 +196,7 @@ def _get_branches(loader, raw_case, entity_map):
             tap = 1.0 / taps[tap_turn]
 
             # Update entity map with etype and static data
-            entity_map[bid] = {'etype': 'Transformer', 'idx': idx, 'static': {
+            entity_map[eid] = {'etype': 'Transformer', 'idx': idx, 'static': {
                 'S_r': s_max * 1e6,  # From [MVA] to [VA]
                 'P_loss': p_loss * 1000,  # From [kW] to [W]
                 'U_p': entity_map[fbus]['static']['Vl'],
@@ -203,7 +213,7 @@ def _get_branches(loader, raw_case, entity_map):
             base_v = entity_map[fbus]['static']['Vl'] # [V]
             s_max = base_v * i_max  # [VA]
             tap = 0
-            entity_map[bid] = {'etype': 'Branch', 'idx': idx, 'static': {
+            entity_map[eid] = {'etype': 'Branch', 'idx': idx, 'static': {
                 'S_max': s_max,
                 'I_max': i_max,
                 'length': length,
@@ -269,7 +279,9 @@ class JSON:
             for tid, fbus, tbus, Sr, Uk, Pk, _, _ in raw_case['trafo']:
                 # Calculate resistances; See: Adolf J. Schwab:
                 # Elektroenergiesysteme, pp. 385, 3rd edition, 2012
-                Us = entity_map[tbus]['static']['Vl'] / 1000  # kV
+                # FIXME: Using "0" as grid index is an ugly hack but I'm going
+                #        remove the old format soon anyway ...
+                Us = entity_map['0/%s' % tbus]['static']['Vl'] / 1000  # kV
                 Xk = (Uk * (Us ** 2)) / (100 * Sr)  # Ohm
                 Rk = (Pk * (Xk ** 2)) / ((Uk * Us / 100) ** 2)  # Ohm
 

@@ -96,8 +96,8 @@ class PyPower(mosaik_api.Simulator):
 
         self._entities = {}
         self._relations = []  # List of pair-wise related entities (IDs)
-        self._ppc = None  # The pypower case
-        self._data_cache = {}  # Cache for load flow outputs
+        self._ppcs = []  # The pypower cases
+        self._cache = {}  # Cache for load flow outputs
 
     def init(self, sid, step_size, pos_loads=True):
         logger.debug('Power flow will be computed every %d seconds.' %
@@ -112,53 +112,65 @@ class PyPower(mosaik_api.Simulator):
         return self.meta
 
     def create(self, num, modelname, gridfile):
-        if num != 1 or self._entities:
-            raise ValueError('Can only one grid instance.')
         if modelname != 'Grid':
             raise ValueError('Unknown model: "%s"' % modelname)
         if not os.path.isfile(gridfile):
             raise ValueError('File "%s" does not exist!' % gridfile)
 
-        self._ppc, self._entities = model.load_case(gridfile)
+        grids = []
+        for i in range(num):
+            grid_idx = len(self._ppcs)
+            ppc, entities = model.load_case(gridfile, grid_idx)
+            self._ppcs.append(ppc)
 
-        entities = []
-        for eid, attrs in sorted(self._entities.items()):
-            # We'll only add relations from branches to nodes (and not from
-            # nodes to branches) because this is sufficient for mosaik to
-            # build the entity graph.
-            relations = []
-            if attrs['etype'] in ['Transformer', 'Branch']:
-                relations = attrs['related']
+            children = []
+            for eid, attrs in sorted(entities.items()):
+                assert eid not in self._entities
+                self._entities[eid] = attrs
 
-            entities.append({
-                'eid': eid,
-                'type': attrs['etype'],
-                'rel': relations,
+                # We'll only add relations from branches to nodes (and not from
+                # nodes to branches) because this is sufficient for mosaik to
+                # build the entity graph.
+                relations = []
+                if attrs['etype'] in ['Transformer', 'Branch']:
+                    relations = attrs['related']
+
+                children.append({
+                    'eid': eid,
+                    'type': attrs['etype'],
+                    'rel': relations,
+                })
+
+            grids.append({
+                'eid': '%s/grid' % grid_idx,
+                'type': 'Grid',
+                'rel': [],
+                'children': children,
             })
 
-        return [{
-            'eid': 'grid_0',
-            'type': 'Grid',
-            'rel': [],
-            'children': entities,
-        }]
+        return grids
 
     def step(self, time, inputs):
-        model.reset_inputs(self._ppc)
+        for ppc in self._ppcs:
+            model.reset_inputs(ppc)
+
         for eid, attrs in inputs.items():
+            ppc = model.case_for_eid(eid, self._ppcs)
             idx = self._entities[eid]['idx']
             etype = self._entities[eid]['etype']
             static = self._entities[eid]['static']
             for name, values in attrs.items():
-                # values is a list of p/q values, sum them up to a single value
+                # values is a list of p/q values, sum them up
                 attrs[name] = sum(float(v) for v in values)
                 if name == 'P':
                     attrs[name] *= self.pos_loads
 
-            model.set_inputs(self._ppc, etype, idx, attrs, static)
+            model.set_inputs(ppc, etype, idx, attrs, static)
 
-        res = model.perform_powerflow(self._ppc)
-        self._cache = model.update_cache(res, self._entities)
+        res = []
+        for ppc in self._ppcs:
+            res.append(model.perform_powerflow(ppc))
+        self._cache = model.get_cache_entries(res, self._entities)
 
         return time + self.step_size
 
