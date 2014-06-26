@@ -15,7 +15,7 @@ setup(
     url='https://bitbucket.org/mosaik/mosaik-pypower',
     install_requires=[
         'PYPOWER>=4.1',
-        'mosaik-api>=2.0a1',
+        'mosaik-api>=2.0a3',
         'numpy>=1.6',
         'scipy>=0.9',
         'xlrd>=0.9.2',

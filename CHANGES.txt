@@ -1,6 +1,15 @@
 Changelog
 =========
 
+0.6 – 2014-06-26
+----------------
+
+- [NEW] Can import grids from Excel files (xlsx)
+- [NEW] New import format for JSON files (the old format is still supported)
+- [CHANGE] Massive internal refactoring.
+- [CHANGE] Updated to mosaik-api 2.0a3.
+
+
 0.5 – 2014-03-26
 ----------------
 
