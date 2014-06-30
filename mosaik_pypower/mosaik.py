@@ -53,6 +53,8 @@ meta = {
                 'P_to',      # Active power at "to" side [W]
                 'Q_to',      # Reactive power at "to" side [VAr]
                 'S_r',       # Rated apparent power [VA]
+                'I_max_p',   # Maximum current on primary side [A]
+                'I_max_s',   # Maximum current on secondary side [A]
                 'P_loss',    # Active power loss [W]
                 'U_p',       # Nominal primary voltage [V]
                 'U_s',       # Nominal secondary voltage [V]

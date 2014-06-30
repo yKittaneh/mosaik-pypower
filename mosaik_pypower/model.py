@@ -191,13 +191,15 @@ def _get_branches(loader, raw_case, entity_map, grid_idx):
         t_idx = entity_map[tbus]['idx']
 
         if is_trafo:
-            s_max, p_loss, r, x, taps = bdata
+            s_max, i_max_p, i_max_s, p_loss, r, x, taps = bdata
             b = 0
             tap = 1.0 / taps[tap_turn]
 
             # Update entity map with etype and static data
             entity_map[eid] = {'etype': 'Transformer', 'idx': idx, 'static': {
                 'S_r': s_max * 1e6,  # From [MVA] to [VA]
+                'I_max_p': i_max_p,
+                'I_max_s': i_max_s,
                 'P_loss': p_loss * 1000,  # From [kW] to [W]
                 'U_p': entity_map[fbus]['static']['Vl'],
                 'U_s': entity_map[tbus]['static']['Vl'],
@@ -276,7 +278,7 @@ class JSON:
     def branches(raw_case, entity_map):
         if 'base_mva' in raw_case:
             # Old format
-            for tid, fbus, tbus, Sr, Uk, Pk, _, _ in raw_case['trafo']:
+            for tid, fbus, tbus, Sr, Uk, Pk, Imaxp, Imaxs in raw_case['trafo']:
                 # Calculate resistances; See: Adolf J. Schwab:
                 # Elektroenergiesysteme, pp. 385, 3rd edition, 2012
                 # FIXME: Using "0" as grid index is an ugly hack but I'm going
@@ -285,7 +287,7 @@ class JSON:
                 Xk = (Uk * (Us ** 2)) / (100 * Sr)  # Ohm
                 Rk = (Pk * (Xk ** 2)) / ((Uk * Us / 100) ** 2)  # Ohm
 
-                info = (Sr, 0, Rk, Xk, {0: 1.0})
+                info = (Sr, Imaxp, Imaxs, 0, Rk, Xk, {0: 1.0})
                 yield (True, tid, fbus, tbus, 1, info, 1, 0)
 
             for bid, fbus, tbus, l, r, x, c, i_max in raw_case['branch']:

@@ -84,6 +84,8 @@ def test_load_case(filename):
         '0/Bus3': {'etype': 'PQBus', 'idx': 4, 'static': {'Vl': 20000}},
         '0/Trafo1': {'etype': 'Transformer', 'idx': 0, 'static': {
             'S_r': 40000000,
+            'I_max_p': 209.9,
+            'I_max_s': 1050.0,
             'P_loss': 160000,
             'U_p': 110000,
             'U_s': 20000,

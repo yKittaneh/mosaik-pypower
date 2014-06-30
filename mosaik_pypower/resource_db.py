@@ -5,7 +5,7 @@ Database of operating resources.
 from collections import namedtuple
 
 
-Transformer = namedtuple('Transformer', 'sr, pl, r, x, taps')
+Transformer = namedtuple('Transformer', 'sr, i_max_p, i_max_s, pl, r, x, taps')
 """Transformer with *S_r* [MVA], *P_loss* [kW], *R* [Ω] as *r*, *X* [Ω] as *x*,
 *B* [F] as *b* and *I_max* [A] as *i*."""
 
@@ -29,14 +29,14 @@ taps_9_002 = {
 
 transformers = {
     # High to medium voltage
-    'TRAFO_31':  Transformer(31.5, 120, 0.0443, 1.7143, taps_9_002),
-    'TRAFO_40':  Transformer(40,   160, 0.0350, 1.3500, taps_9_002),
+    'TRAFO_31':  Transformer(31.5, 165.0,  827.0, 120, 0.0443, 1.7143, taps_9_002),  # NOQA
+    'TRAFO_40':  Transformer(40,   209.9, 1050.0, 160, 0.0350, 1.3500, taps_9_002),  # NOQA
 
     # Medium to low voltage
-    'TRAFO_200': Transformer(0.20, 3.6, 0.00960, 0.02432, {0: 1.0}),
-    'TRAFO_250': Transformer(0.25, 3.6, 0.00960, 0.02432, {0: 1.0}),
-    'TRAFO_400': Transformer(0.40, 3.6, 0.00520, 0.01800, {0: 1.0}),
-    'TRAFO_630': Transformer(0.63, 3.6, 0.00305, 0.01194, {0: 1.0}),
+    'TRAFO_200': Transformer(0.20,  5.5, 288.6, 3.6, 0.00960, 0.02432, {0: 1.0}),  # NOQA
+    'TRAFO_250': Transformer(0.25,  6.9, 360.8, 3.6, 0.00960, 0.02432, {0: 1.0}),  # NOQA
+    'TRAFO_400': Transformer(0.40, 11.5, 577.4, 3.6, 0.00520, 0.01800, {0: 1.0}),  # NOQA
+    'TRAFO_630': Transformer(0.63, 18.2, 909.3, 3.6, 0.00305, 0.01194, {0: 1.0}),  # NOQA
 }
 lines = {
     # Medium voltage
