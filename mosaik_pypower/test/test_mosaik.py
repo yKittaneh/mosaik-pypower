@@ -46,26 +46,26 @@ def test_mosaik():
     entities = sim.create(1, 'Grid', grid_file)
     entities[0]['children'].sort(key=lambda e: e['eid'])
     assert entities == [{
-        'eid': '0/grid', 'type': 'Grid', 'rel': [], 'children': [
-            {'eid': '0/B_0', 'type': 'Branch', 'rel': ['0/Bus0', '0/Bus1']},
-            {'eid': '0/B_1', 'type': 'Branch', 'rel': ['0/Bus0', '0/Bus2']},
-            {'eid': '0/B_2', 'type': 'Branch', 'rel': ['0/Bus1', '0/Bus3']},
-            {'eid': '0/B_3', 'type': 'Branch', 'rel': ['0/Bus2', '0/Bus3']},
-            {'eid': '0/Bus0', 'type': 'PQBus', 'rel': []},
-            {'eid': '0/Bus1', 'type': 'PQBus', 'rel': []},
-            {'eid': '0/Bus2', 'type': 'PQBus', 'rel': []},
-            {'eid': '0/Bus3', 'type': 'PQBus', 'rel': []},
-            {'eid': '0/Grid', 'type': 'RefBus', 'rel': []},
-            {'eid': '0/Trafo1', 'type': 'Transformer', 'rel': ['0/Grid',
-                                                               '0/Bus0']},
+        'eid': '0-grid', 'type': 'Grid', 'rel': [], 'children': [
+            {'eid': '0-B_0', 'type': 'Branch', 'rel': ['0-Bus0', '0-Bus1']},
+            {'eid': '0-B_1', 'type': 'Branch', 'rel': ['0-Bus0', '0-Bus2']},
+            {'eid': '0-B_2', 'type': 'Branch', 'rel': ['0-Bus1', '0-Bus3']},
+            {'eid': '0-B_3', 'type': 'Branch', 'rel': ['0-Bus2', '0-Bus3']},
+            {'eid': '0-Bus0', 'type': 'PQBus', 'rel': []},
+            {'eid': '0-Bus1', 'type': 'PQBus', 'rel': []},
+            {'eid': '0-Bus2', 'type': 'PQBus', 'rel': []},
+            {'eid': '0-Bus3', 'type': 'PQBus', 'rel': []},
+            {'eid': '0-Grid', 'type': 'RefBus', 'rel': []},
+            {'eid': '0-Trafo1', 'type': 'Transformer', 'rel': ['0-Grid',
+                                                               '0-Bus0']},
         ],
     }]
 
     data = {
-        '0/Bus0': {'P': [1.76], 'Q': [.95]},
-        '0/Bus1': {'P': [.8, -.2], 'Q': [.2, 0]},
-        '0/Bus2': {'P': [-1.98], 'Q': [-.28]},
-        '0/Bus3': {'P': [.85], 'Q': [.53]},
+        '0-Bus0': {'P': [1.76], 'Q': [.95]},
+        '0-Bus1': {'P': [.8, -.2], 'Q': [.2, 0]},
+        '0-Bus2': {'P': [-1.98], 'Q': [-.28]},
+        '0-Bus3': {'P': [.85], 'Q': [.53]},
     }
     # Correct input data by converting to MW and changing the sign:
     for d in data.values():
@@ -78,38 +78,38 @@ def test_mosaik():
     assert next_step == 60
 
     data = sim.get_data({
-        '0/Grid': ['P', 'Q', 'Vl'],
-        '0/Bus0': ['P', 'Q', 'Vm', 'Va'],
-        '0/Bus1': ['P', 'Q', 'Vm', 'Va'],
-        '0/Bus2': ['P', 'Q', 'Vm', 'Va'],
-        '0/Bus3': ['P', 'Q', 'Vm', 'Va'],
+        '0-Grid': ['P', 'Q', 'Vl'],
+        '0-Bus0': ['P', 'Q', 'Vm', 'Va'],
+        '0-Bus1': ['P', 'Q', 'Vm', 'Va'],
+        '0-Bus2': ['P', 'Q', 'Vm', 'Va'],
+        '0-Bus3': ['P', 'Q', 'Vm', 'Va'],
     })
     assert all_close(data, {
-        '0/Bus0': {
+        '0-Bus0': {
             'Vm': 19.999 * kV,
             'Va': -0.22,
             'P': 1.76 * MW * pos_loads,
             'Q': 0.95 * MW,
         },
-        '0/Bus1': {
+        '0-Bus1': {
             'Vm': 20. * kV,
             'Va': -0.21,
             'P': .6 * MW * pos_loads,
             'Q': .2 * MW,
         },
-        '0/Bus2': {
+        '0-Bus2': {
             'Vm': 20.013 * kV,
             'Va': -0.19,
             'P': -1.98 * MW * pos_loads,
             'Q': -0.28 * MW,
         },
-        '0/Bus3': {
+        '0-Bus3': {
             'Vm': 20.009 * kV,
             'Va': -0.19,
             'P': .85 * MW * pos_loads,
             'Q': .53 * MW,
         },
-        '0/Grid': {
+        '0-Grid': {
             'P': 1.230925 * MW * pos_loads,
             'Q': 0.441486 * MW,
             'Vl': 110000,
@@ -128,15 +128,15 @@ def test_multiple_grids():
 
     assert len(entities_a) == 2
     assert len(entities_b) == 1
-    assert entities_a[0]['eid'] == '0/grid'
-    assert entities_a[1]['eid'] == '1/grid'
-    assert entities_b[0]['eid'] == '2/grid'
+    assert entities_a[0]['eid'] == '0-grid'
+    assert entities_a[1]['eid'] == '1-grid'
+    assert entities_b[0]['eid'] == '2-grid'
 
     data = {
-        '0/Bus0': {'P': [1.76], 'Q': [.95]},
-        '0/Bus1': {'P': [.8, -.2], 'Q': [.2, 0]},
-        '0/Bus2': {'P': [-1.98], 'Q': [-.28]},
-        '0/Bus3': {'P': [.85], 'Q': [.53]},
+        '0-Bus0': {'P': [1.76], 'Q': [.95]},
+        '0-Bus1': {'P': [.8, -.2], 'Q': [.2, 0]},
+        '0-Bus2': {'P': [-1.98], 'Q': [-.28]},
+        '0-Bus3': {'P': [.85], 'Q': [.53]},
     }
     # Correct input data by converting to MW and changing the sign:
     for d in data.values():
@@ -148,18 +148,18 @@ def test_multiple_grids():
     sim.step(0, data)
 
     data = sim.get_data({
-        '0/Grid': ['P', 'Q'],
-        '0/Bus0': ['P', 'Q'],
-        '1/Grid': ['P', 'Q'],
-        '1/Bus0': ['P', 'Q'],
-        '2/Grid': ['P', 'Q'],
-        '2/Bus0': ['P', 'Q'],
+        '0-Grid': ['P', 'Q'],
+        '0-Bus0': ['P', 'Q'],
+        '1-Grid': ['P', 'Q'],
+        '1-Bus0': ['P', 'Q'],
+        '2-Grid': ['P', 'Q'],
+        '2-Bus0': ['P', 'Q'],
     })
     assert all_close(data, {
-        '0/Grid': {'Q': 441486,  'P': -1230925},
-        '1/Grid': {'Q': -959406, 'P': -276},
-        '2/Grid': {'Q': -959406, 'P': -276},
-        '0/Bus0': {'Q': 950000, 'P': -1760000},
-        '1/Bus0': {'Q': 0,      'P': 0},
-        '2/Bus0': {'Q': 0,      'P': 0},
+        '0-Grid': {'Q': 441486,  'P': -1230925},
+        '1-Grid': {'Q': -959406, 'P': -276},
+        '2-Grid': {'Q': -959406, 'P': -276},
+        '0-Bus0': {'Q': 950000, 'P': -1760000},
+        '1-Bus0': {'Q': 0,      'P': 0},
+        '2-Bus0': {'Q': 0,      'P': 0},
     }, ndigits=0)

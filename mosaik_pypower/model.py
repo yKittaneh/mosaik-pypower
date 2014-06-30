@@ -152,11 +152,11 @@ def get_cache_entries(cases, entity_map):
 
 
 def make_eid(name, grid_idx):
-    return '%s/%s' % (grid_idx, name)
+    return '%s-%s' % (grid_idx, name)
 
 
 def case_for_eid(eid, case):
-    idx = eid.split('/')[0]
+    idx = eid.split('-')[0]
     return case[int(idx)]
 
 
@@ -283,7 +283,7 @@ class JSON:
                 # Elektroenergiesysteme, pp. 385, 3rd edition, 2012
                 # FIXME: Using "0" as grid index is an ugly hack but I'm going
                 #        remove the old format soon anyway ...
-                Us = entity_map['0/%s' % tbus]['static']['Vl'] / 1000  # kV
+                Us = entity_map[make_eid(tbus, 0)]['static']['Vl'] / 1000  # kV
                 Xk = (Uk * (Us ** 2)) / (100 * Sr)  # Ohm
                 Rk = (Pk * (Xk ** 2)) / ((Uk * Us / 100) ** 2)  # Ohm
 

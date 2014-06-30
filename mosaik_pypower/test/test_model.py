@@ -71,18 +71,18 @@ def test_load_case(filename):
 
     # The old data format does not contain a value for P_loss
     if filename.endswith('test_case_b.old.json'):
-        emap['0/Trafo1']['static']['P_loss'] = 160000
-        emap['0/Trafo1']['static']['taps'] = {-4: 0.92, -3: 0.94, -2: 0.96,
+        emap['0-Trafo1']['static']['P_loss'] = 160000
+        emap['0-Trafo1']['static']['taps'] = {-4: 0.92, -3: 0.94, -2: 0.96,
                                               -1: 0.98, 0: 1.0, 1: 1.02,
                                               2: 1.04, 3: 1.06, 4: 1.08}
 
     assert emap == {
-        '0/Grid': {'etype': 'RefBus', 'idx': 0, 'static': {'Vl': 110000}},
-        '0/Bus0': {'etype': 'PQBus', 'idx': 1, 'static': {'Vl': 20000}},
-        '0/Bus1': {'etype': 'PQBus', 'idx': 2, 'static': {'Vl': 20000}},
-        '0/Bus2': {'etype': 'PQBus', 'idx': 3, 'static': {'Vl': 20000}},
-        '0/Bus3': {'etype': 'PQBus', 'idx': 4, 'static': {'Vl': 20000}},
-        '0/Trafo1': {'etype': 'Transformer', 'idx': 0, 'static': {
+        '0-Grid': {'etype': 'RefBus', 'idx': 0, 'static': {'Vl': 110000}},
+        '0-Bus0': {'etype': 'PQBus', 'idx': 1, 'static': {'Vl': 20000}},
+        '0-Bus1': {'etype': 'PQBus', 'idx': 2, 'static': {'Vl': 20000}},
+        '0-Bus2': {'etype': 'PQBus', 'idx': 3, 'static': {'Vl': 20000}},
+        '0-Bus3': {'etype': 'PQBus', 'idx': 4, 'static': {'Vl': 20000}},
+        '0-Trafo1': {'etype': 'Transformer', 'idx': 0, 'static': {
             'S_r': 40000000,
             'I_max_p': 209.9,
             'I_max_s': 1050.0,
@@ -93,8 +93,8 @@ def test_load_case(filename):
                      2: 1.04, 3: 1.06, 4: 1.08},
             'tap_turn': 0,
             'online': True,
-        }, 'related': ['0/Grid', '0/Bus0']},
-        '0/B_0': {'etype': 'Branch', 'idx': 1, 'static': {
+        }, 'related': ['0-Grid', '0-Bus0']},
+        '0-B_0': {'etype': 'Branch', 'idx': 1, 'static': {
             'S_max': 7240000,
             'I_max': 362,
             'length': 5.0,
@@ -102,8 +102,8 @@ def test_load_case(filename):
             'X_per_km': 0.119,
             'C_per_km': 0.000000247,
             'online': True,
-        }, 'related': ['0/Bus0', '0/Bus1']},
-        '0/B_1': {'etype': 'Branch', 'idx': 2, 'static': {
+        }, 'related': ['0-Bus0', '0-Bus1']},
+        '0-B_1': {'etype': 'Branch', 'idx': 2, 'static': {
             'S_max': 7240000,
             'I_max': 362,
             'length': 3.0,
@@ -111,8 +111,8 @@ def test_load_case(filename):
             'X_per_km': 0.119,
             'C_per_km': 0.000000247,
             'online': True,
-        }, 'related': ['0/Bus0', '0/Bus2']},
-        '0/B_2': {'etype': 'Branch', 'idx': 3, 'static': {
+        }, 'related': ['0-Bus0', '0-Bus2']},
+        '0-B_2': {'etype': 'Branch', 'idx': 3, 'static': {
             'S_max': 7240000,
             'I_max': 362,
             'length': 2.0,
@@ -120,8 +120,8 @@ def test_load_case(filename):
             'X_per_km': 0.119,
             'C_per_km': 0.000000247,
             'online': True,
-        }, 'related': ['0/Bus1', '0/Bus3']},
-        '0/B_3': {'etype': 'Branch', 'idx': 4, 'static': {
+        }, 'related': ['0-Bus1', '0-Bus3']},
+        '0-B_3': {'etype': 'Branch', 'idx': 4, 'static': {
             'S_max': 7240000,
             'I_max': 362,
             'length': 0.3,
@@ -129,7 +129,7 @@ def test_load_case(filename):
             'X_per_km': 0.119,
             'C_per_km': 0.000000247,
             'online': True,
-        }, 'related': ['0/Bus2', '0/Bus3']},
+        }, 'related': ['0-Bus2', '0-Bus3']},
     }
 
 
@@ -213,14 +213,14 @@ def test_get_cache_entries(ppc_eidmap):
             data[attr] = round(val, 1)
 
     assert cache == {
-        '0/Grid': {'P': 1230925.2, 'Q': 441485.7, 'Va': 0.0, 'Vm': 110000},
-        '0/Bus0': {'P': 1760000.0, 'Q': 950000.0, 'Va': -0.0, 'Vm': 19998.9},
-        '0/Bus1': {'P': 600000.0, 'Q': 200000.0, 'Va': -0.0, 'Vm': 20000.4},
-        '0/Bus2': {'P': -1980000.0, 'Q': -280000.0, 'Va': 0.0, 'Vm': 20013.4},
-        '0/Bus3': {'P': 850000.0, 'Q': 530000.0, 'Va': 0.0, 'Vm': 20009.2},
-        '0/Trafo1': {'P_from': 1230925.2, 'P_to': -1230920.2, 'Q_from': 441485.7, 'Q_to': -441294.9},  # NOQA
-        '0/B_0': {'I_real': -0.1, 'I_imag': -5.1, 'P_from': 4621.4, 'P_to': -4615.1, 'Q_from': -288258.8, 'Q_to': -177305.5},  # NOQA
-        '0/B_1': {'I_real': 15.4, 'I_imag': -1.7, 'P_from': -533701.1, 'P_to': 534055.2, 'Q_from': -220446.3, 'Q_to': -58815.9},  # NOQA
-        '0/B_2': {'I_real': 17.2, 'I_imag': -4.7, 'P_from': -595384.9, 'P_to': 595676.0, 'Q_from': -22694.5, 'Q_to': -163414.9},  # NOQA
-        '0/B_3': {'I_real': 41.7, 'I_imag': 9.8, 'P_from': 1445944.8, 'P_to': -1445676.0, 'Q_from': 338815.9, 'Q_to': -366585.1},  # NOQA
+        '0-Grid': {'P': 1230925.2, 'Q': 441485.7, 'Va': 0.0, 'Vm': 110000},
+        '0-Bus0': {'P': 1760000.0, 'Q': 950000.0, 'Va': -0.0, 'Vm': 19998.9},
+        '0-Bus1': {'P': 600000.0, 'Q': 200000.0, 'Va': -0.0, 'Vm': 20000.4},
+        '0-Bus2': {'P': -1980000.0, 'Q': -280000.0, 'Va': 0.0, 'Vm': 20013.4},
+        '0-Bus3': {'P': 850000.0, 'Q': 530000.0, 'Va': 0.0, 'Vm': 20009.2},
+        '0-Trafo1': {'P_from': 1230925.2, 'P_to': -1230920.2, 'Q_from': 441485.7, 'Q_to': -441294.9},  # NOQA
+        '0-B_0': {'I_real': -0.1, 'I_imag': -5.1, 'P_from': 4621.4, 'P_to': -4615.1, 'Q_from': -288258.8, 'Q_to': -177305.5},  # NOQA
+        '0-B_1': {'I_real': 15.4, 'I_imag': -1.7, 'P_from': -533701.1, 'P_to': 534055.2, 'Q_from': -220446.3, 'Q_to': -58815.9},  # NOQA
+        '0-B_2': {'I_real': 17.2, 'I_imag': -4.7, 'P_from': -595384.9, 'P_to': 595676.0, 'Q_from': -22694.5, 'Q_to': -163414.9},  # NOQA
+        '0-B_3': {'I_real': 41.7, 'I_imag': 9.8, 'P_from': 1445944.8, 'P_to': -1445676.0, 'Q_from': 338815.9, 'Q_to': -366585.1},  # NOQA
     }

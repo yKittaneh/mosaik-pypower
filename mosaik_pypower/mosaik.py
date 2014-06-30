@@ -144,7 +144,7 @@ class PyPower(mosaik_api.Simulator):
                 })
 
             grids.append({
-                'eid': '%s/grid' % grid_idx,
+                'eid': model.make_eid('grid', grid_idx),
                 'type': 'Grid',
                 'rel': [],
                 'children': children,
