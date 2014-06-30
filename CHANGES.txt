@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.6.1 – 2014-06-30
+------------------
+
+- [NEW] Added *I_max_p* [A] and *I_max_s* [A] to the transformer data.
+
+
 0.6 – 2014-06-26
 ----------------
 
