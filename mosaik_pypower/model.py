@@ -185,7 +185,7 @@ def _get_branches(loader, raw_case, entity_map, grid_idx):
         tbus = make_eid(tbus, grid_idx)
 
         assert fbus in entity_map, fbus
-        assert tbus in entity_map, fbus
+        assert tbus in entity_map, tbus
 
         f_idx = entity_map[fbus]['idx']
         t_idx = entity_map[tbus]['idx']
