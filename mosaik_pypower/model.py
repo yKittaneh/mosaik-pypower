@@ -315,8 +315,15 @@ class JSON:
 class Excel:
     """Namespace that provides functions for loading cases in the JSON format.
     """
+    cache = {}
+
     def open(path):
-        return xlrd.open_workbook(path, on_demand=True)
+        try:
+            return Excel.cache[path]
+        except KeyError:
+            wb = xlrd.open_workbook(path, on_demand=True)
+            Excel.cache[path] = wb
+            return wb
 
     def buses(wb):
         sheet = wb.sheet_by_index(0)
