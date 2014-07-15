@@ -6,8 +6,18 @@ from collections import namedtuple
 
 
 Transformer = namedtuple('Transformer', 'sr, i_max_p, i_max_s, pl, r, x, taps')
-"""Transformer with *S_r* [MVA], *P_loss* [kW], *R* [Ω] as *r*, *X* [Ω] as *x*,
-*B* [F] as *b* and *I_max* [A] as *i*."""
+"""Transformer with
+
+- *S_r* [MVA] as *sr*,
+- *I_max_primary* [A] as *I_max_p*,
+- *I_max_secondary* [A], as *I_max_s*,
+- *P_loss* [kW] as *pl*,
+- *R* [Ω] as *r*,
+- *X* [Ω] as *x*,
+- *B* [F] as *b* and
+- *taps*.
+
+"""
 
 Line = namedtuple('Line', 'r, x, c, i')
 """Line with *R'* [Ω/km] as *r*, *X'* [Ω/km] as *x*, *C'* [nF/km] as *b* and
