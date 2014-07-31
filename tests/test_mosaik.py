@@ -70,9 +70,10 @@ def test_mosaik():
     # Correct input data by converting to MW and changing the sign:
     for d in data.values():
         for k, v in d.items():
-            d[k] = [x * MW for x in v]
+            # Convert values to W and the list to a dict:
+            d[k] = {i: x * MW for i, x in enumerate(v)}
             if k == 'P':
-                d[k] = [x * pos_loads for x in d[k]]
+                d[k] = {key: val * pos_loads for key, val in d[k].items()}
 
     next_step = sim.step(0, data)
     assert next_step == 60
@@ -141,9 +142,10 @@ def test_multiple_grids():
     # Correct input data by converting to MW and changing the sign:
     for d in data.values():
         for k, v in d.items():
-            d[k] = [x * MW for x in v]
+            # Convert values to W and the list to a dict:
+            d[k] = {i: x * MW for i, x in enumerate(v)}
             if k == 'P':
-                d[k] = [x * pos_loads for x in d[k]]
+                d[k] = {key: val * pos_loads for key, val in d[k].items()}
 
     sim.step(0, data)
 

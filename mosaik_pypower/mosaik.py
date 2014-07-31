@@ -162,8 +162,8 @@ class PyPower(mosaik_api.Simulator):
             etype = self._entities[eid]['etype']
             static = self._entities[eid]['static']
             for name, values in attrs.items():
-                # values is a list of p/q values, sum them up
-                attrs[name] = sum(float(v) for v in values)
+                # values is a dict of p/q values, sum them up
+                attrs[name] = sum(float(v) for v in values.values())
                 if name == 'P':
                     attrs[name] *= self.pos_loads
 
