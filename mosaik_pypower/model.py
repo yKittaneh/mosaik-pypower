@@ -281,9 +281,10 @@ class JSON:
             for tid, fbus, tbus, Sr, Uk, Pk, Imaxp, Imaxs in raw_case['trafo']:
                 # Calculate resistances; See: Adolf J. Schwab:
                 # Elektroenergiesysteme, pp. 385, 3rd edition, 2012
-                # FIXME: Using "0" as grid index is an ugly hack but I'm going
-                #        remove the old format soon anyway ...
-                Us = entity_map[make_eid(tbus, 0)]['static']['Vl'] / 1000  # kV
+
+                # Ugly hack to get the grid index *i*
+                i = (list(entity_map))[0].split('-', 1)[0]
+                Us = entity_map[make_eid(tbus, i)]['static']['Vl'] / 1000  # kV
                 Xk = (Uk * (Us ** 2)) / (100 * Sr)  # Ohm
                 Rk = (Pk * (Xk ** 2)) / ((Uk * Us / 100) ** 2)  # Ohm
 
