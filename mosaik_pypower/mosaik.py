@@ -19,6 +19,7 @@ meta = {
             'public': True,
             'params': [
                 'gridfile',  # Name of the file containing the grid topology.
+                'sheetnames',  # Mapping of Excel sheet names, optional.
             ],
             'attrs': [],
         },
@@ -113,16 +114,19 @@ class PyPower(mosaik_api.Simulator):
 
         return self.meta
 
-    def create(self, num, modelname, gridfile):
+    def create(self, num, modelname, gridfile, sheetnames=None):
         if modelname != 'Grid':
             raise ValueError('Unknown model: "%s"' % modelname)
         if not os.path.isfile(gridfile):
             raise ValueError('File "%s" does not exist!' % gridfile)
 
+        if not sheetnames:
+            sheetnames = {}
+
         grids = []
         for i in range(num):
             grid_idx = len(self._ppcs)
-            ppc, entities = model.load_case(gridfile, grid_idx)
+            ppc, entities = model.load_case(gridfile, grid_idx, sheetnames)
             self._ppcs.append(ppc)
 
             children = []

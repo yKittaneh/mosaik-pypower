@@ -16,7 +16,7 @@ sqrt_3 = math.sqrt(3)
 def ppc_eidmap():
     filename = os.path.join(os.path.dirname(__file__), 'data',
                             'test_case_b.old.json')
-    ppc, emap = model.load_case(filename, 0)
+    ppc, emap = model.load_case(filename, 0, {})
     return ppc, emap
 
 
@@ -43,7 +43,7 @@ def test_uniqe_key_dict():
 ])
 def test_load_case(filename):
     filename = os.path.join(os.path.dirname(__file__), 'data', filename)
-    ppc, emap = model.load_case(filename, 0)
+    ppc, emap = model.load_case(filename, 0, {})
 
     assert len(ppc) == 4
     assert ppc['baseMVA'] == 10

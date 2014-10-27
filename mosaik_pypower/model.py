@@ -32,7 +32,15 @@ BUS_PQ_FACTOR = power_factor * 1e6  # from MW to W
 BRANCH_PQ_FACTOR = power_factor * 1e6  # from MW to W
 
 
-def load_case(path, grid_idx):
+DEFAULT_SHEETS = {
+    'bus': 'Nodes',
+    'branch': 'Lines',
+    'branch_types': 'Line types',
+    'trafo_types': 'Trafo types',
+}
+
+
+def load_case(path, grid_idx, sheetnames):
     """Load the case from *path* and create a PYPOWER case and an entity map.
     """
     loaders = {
@@ -48,8 +56,9 @@ def load_case(path, grid_idx):
     entity_map = UniqueKeyDict()
 
     raw_case = loader.open(path)
-    buses = _get_buses(loader, raw_case, entity_map, grid_idx)
-    branches = _get_branches(loader, raw_case, entity_map, grid_idx)
+    buses = _get_buses(loader, raw_case, entity_map, grid_idx, sheetnames)
+    branches = _get_branches(loader, raw_case, entity_map, grid_idx,
+                             sheetnames)
     base_mva = loader.base_mva(raw_case, buses)
 
     ppc = _make_ppc(base_mva, buses, branches)
@@ -160,9 +169,10 @@ def case_for_eid(eid, case):
     return case[int(idx)]
 
 
-def _get_buses(loader, raw_case, entity_map, grid_idx):
+def _get_buses(loader, raw_case, entity_map, grid_idx, sheetnames):
     buses = []
-    for idx, (bid, btype, base_kv) in enumerate(loader.buses(raw_case)):
+    for idx, (bid, btype, base_kv) in enumerate(loader.buses(raw_case,
+                                                             sheetnames)):
         eid = make_eid(bid, grid_idx)
         buses.append((idx, btype, base_kv))
         etype = 'RefBus' if btype == 'REF' else 'PQBus'
@@ -176,9 +186,10 @@ def _get_buses(loader, raw_case, entity_map, grid_idx):
     return buses
 
 
-def _get_branches(loader, raw_case, entity_map, grid_idx):
+def _get_branches(loader, raw_case, entity_map, grid_idx, sheetnames):
     branches = []
-    for idx, branch in enumerate(loader.branches(raw_case, entity_map)):
+    for idx, branch in enumerate(loader.branches(raw_case, entity_map,
+                                                 sheetnames)):
         is_trafo, bid, fbus, tbus, length, bdata, online, tap_turn = branch
         eid = make_eid(bid, grid_idx)
         fbus = make_eid(fbus, grid_idx)
@@ -271,11 +282,11 @@ class JSON:
     def open(path):
         return json.load(open(path))
 
-    def buses(raw_case):
+    def buses(raw_case, sheetnames):
         for bus_id, bus_type, base_kv in raw_case['bus']:
             yield (bus_id, bus_type, base_kv)
 
-    def branches(raw_case, entity_map):
+    def branches(raw_case, entity_map, sheetnames):
         if 'base_mva' in raw_case:
             # Old format
             for tid, fbus, tbus, Sr, Uk, Pk, Imaxp, Imaxs in raw_case['trafo']:
@@ -326,8 +337,8 @@ class Excel:
             Excel.cache[path] = wb
             return wb
 
-    def buses(wb):
-        sheet = wb.sheet_by_index(0)
+    def buses(wb, sheetnames):
+        sheet = Excel._sheet(wb, 'bus', sheetnames)
         for i in range(1, sheet.nrows):
             if str(sheet.cell_value(i, 0)).startswith('#'):
                 continue
@@ -337,8 +348,8 @@ class Excel:
                 bus_id = str(int(bus_id))
             yield (bus_id, bus_type, base_kv)
 
-    def branches(wb, entity_map):
-        sheet = wb.sheet_by_index(1)
+    def branches(wb, entity_map, sheetnames):
+        sheet = Excel._sheet(wb, 'branch', sheetnames)
         for i in range(1, sheet.nrows):
             if str(sheet.cell_value(i, 0)).startswith('#'):
                 continue
@@ -356,3 +367,7 @@ class Excel:
 
     def base_mva(raw_case, buses):
         return rdb.base_mva.get(buses[0][BUS_BASE_KV], 1)
+
+    def _sheet(wb, name, sheetnames):
+        name = sheetnames.get(name, DEFAULT_SHEETS[name])
+        return wb.sheet_by_name(name)
