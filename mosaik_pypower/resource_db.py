@@ -14,7 +14,6 @@ Transformer = namedtuple('Transformer', 'sr, i_max_p, i_max_s, pl, r, x, taps')
 - *P_loss* [kW] as *pl*,
 - *R* [Ω] as *r*,
 - *X* [Ω] as *x*,
-- *B* [F] as *b* and
 - *taps*.
 
 """

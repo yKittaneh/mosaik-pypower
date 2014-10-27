@@ -10,6 +10,7 @@ import os.path
 
 from pypower import idx_bus, idx_brch, idx_gen
 from pypower.api import ppoption, runpf
+from xlrd.biffh import XLRDError
 import numpy
 import xlrd
 
@@ -36,7 +37,7 @@ DEFAULT_SHEETS = {
     'bus': 'Nodes',
     'branch': 'Lines',
     'branch_types': 'Line types',
-    'trafo_types': 'Trafo types',
+    'trafo_types': 'Transformer types',
 }
 
 
@@ -308,12 +309,25 @@ class JSON:
 
         else:
             # New format
+            # Get trafo DB
+            data = raw_case.get('trafo_types', {}).items()
+            trafos = dict(rdb.transformers)
+            for n, d in data:
+                # Convert transformer tap levels from str to int:
+                d[-1] = {int(k): v for k, v in d[-1].items()}
+                trafos[n] = rdb.Transformer(*d)
+
+            # Get line DB
+            data = raw_case.get('branch_types', {}).items()
+            lines = dict(rdb.lines)
+            lines.update((n, rdb.Line(*d)) for n, d in data)
+
             for tid, fbus, tbus, ttype, online, tap in raw_case['trafo']:
-                trafo = rdb.transformers[ttype]
+                trafo = trafos[ttype]
                 yield (True, tid, fbus, tbus, 1, trafo, int(online), tap)
 
             for bid, fbus, tbus, btype, l, online in raw_case['branch']:
-                line = rdb.lines[btype]
+                line = lines[btype]
                 yield (False, bid, fbus, tbus, l, line, int(online), 0)
 
     def base_mva(raw_case, buses):
@@ -339,34 +353,53 @@ class Excel:
 
     def buses(wb, sheetnames):
         sheet = Excel._sheet(wb, 'bus', sheetnames)
-        for i in range(1, sheet.nrows):
-            if str(sheet.cell_value(i, 0)).startswith('#'):
-                continue
-
-            bus_id, bus_type, base_kv = sheet.row_values(i)[:3]
+        for bus_id, bus_type, base_kv in Excel._iter(sheet, 3):
             if type(bus_id) is float:
                 bus_id = str(int(bus_id))
             yield (bus_id, bus_type, base_kv)
 
     def branches(wb, entity_map, sheetnames):
-        sheet = Excel._sheet(wb, 'branch', sheetnames)
-        for i in range(1, sheet.nrows):
-            if str(sheet.cell_value(i, 0)).startswith('#'):
-                continue
+        # Get trafo dB
+        try:
+            sheet = Excel._sheet(wb, 'trafo_types', sheetnames)
+            data = Excel._iter(sheet, len(rdb.Transformer._fields) + 1)
+            # Parse transformer taps:
+            data = (d[:-1] + [eval(d[-1])] for d in data)
+        except XLRDError:
+            data = []
+        trafos = dict(rdb.transformers)
+        trafos.update((n, rdb.Transformer(*d)) for n, *d in data)
 
-            bid, fbus, tbus, btype, l, online, tap = sheet.row_values(i)[:7]
+        # Get line DB
+        try:
+            sheet = Excel._sheet(wb, 'branch_types', sheetnames)
+            data = Excel._iter(sheet, len(rdb.Line._fields) + 1)
+        except XLRDError:
+            data = []
+        data = list(data)
+        lines = dict(rdb.lines)
+        lines.update((n, rdb.Line(*d)) for n, *d in data)
+
+        sheet = Excel._sheet(wb, 'branch', sheetnames)
+        for bid, fbus, tbus, btype, l, online, typ in Excel._iter(sheet, 7):
             if type(bid) is float:
                 bid = str(int(bid))
             try:
-                info = rdb.transformers[btype]
+                info = trafos[btype]
                 is_trafo = True
             except KeyError:
-                info = rdb.lines[btype]
+                info = lines[btype]
                 is_trafo = False
             yield (is_trafo, bid, fbus, tbus, l, info, online, 0)
 
     def base_mva(raw_case, buses):
         return rdb.base_mva.get(buses[0][BUS_BASE_KV], 1)
+
+    def _iter(sheet, ncols):
+        for i in range(1, sheet.nrows):
+            if str(sheet.cell_value(i, 0)).startswith('#'):
+                continue
+            yield sheet.row_values(i)[:ncols]
 
     def _sheet(wb, name, sheetnames):
         name = sheetnames.get(name, DEFAULT_SHEETS[name])

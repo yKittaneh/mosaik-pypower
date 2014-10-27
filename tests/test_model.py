@@ -133,6 +133,73 @@ def test_load_case(filename):
     }
 
 
+@pytest.mark.parametrize('filename', [
+    'test_case_extra_types.json',
+    'test_case_extra_types.xlsx',
+])
+def test_load_case_extra_types(filename):
+    filename = os.path.join(os.path.dirname(__file__), 'data', filename)
+    ppc, emap = model.load_case(filename, 0, {'bus': 'Nodes',
+                                              'branch': 'Lines',
+                                              'branch_types': 'Line Types',
+                                              'trafo_types': 'Transformers'})
+
+    assert emap == {
+        '0-Grid': {'etype': 'RefBus', 'idx': 0, 'static': {'Vl': 110000}},
+        '0-Bus0': {'etype': 'PQBus', 'idx': 1, 'static': {'Vl': 20000}},
+        '0-Bus1': {'etype': 'PQBus', 'idx': 2, 'static': {'Vl': 20000}},
+        '0-Bus2': {'etype': 'PQBus', 'idx': 3, 'static': {'Vl': 20000}},
+        '0-Bus3': {'etype': 'PQBus', 'idx': 4, 'static': {'Vl': 20000}},
+        '0-Trafo1': {'etype': 'Transformer', 'idx': 0, 'static': {
+            'S_r': 23000000,
+            'I_max_p': 100,
+            'I_max_s': 800,
+            'P_loss': 100000,
+            'U_p': 110000,
+            'U_s': 20000,
+            'taps': {-1: 0.9, 0: 1.0, 1: 1.1},
+            'tap_turn': 0,
+            'online': True,
+        }, 'related': ['0-Grid', '0-Bus0']},
+        '0-B_0': {'etype': 'Branch', 'idx': 1, 'static': {
+            'S_max': 8080000,
+            'I_max': 404,
+            'length': 5.0,
+            'R_per_km': 0.1337,
+            'X_per_km': 0.0815,
+            'C_per_km': 0,
+            'online': True,
+        }, 'related': ['0-Bus0', '0-Bus1']},
+        '0-B_1': {'etype': 'Branch', 'idx': 2, 'static': {
+            'S_max': 8080000,
+            'I_max': 404,
+            'length': 3.0,
+            'R_per_km': 0.1337,
+            'X_per_km': 0.0815,
+            'C_per_km': 0,
+            'online': True,
+        }, 'related': ['0-Bus0', '0-Bus2']},
+        '0-B_2': {'etype': 'Branch', 'idx': 3, 'static': {
+            'S_max': 8080000,
+            'I_max': 404,
+            'length': 2.0,
+            'R_per_km': 0.1337,
+            'X_per_km': 0.0815,
+            'C_per_km': 0,
+            'online': True,
+        }, 'related': ['0-Bus1', '0-Bus3']},
+        '0-B_3': {'etype': 'Branch', 'idx': 4, 'static': {
+            'S_max': 8080000,
+            'I_max': 404,
+            'length': 0.3,
+            'R_per_km': 0.1337,
+            'X_per_km': 0.0815,
+            'C_per_km': 0,
+            'online': True,
+        }, 'related': ['0-Bus2', '0-Bus3']},
+    }
+
+
 def test_reset_inputs(ppc):
     for bus in ppc['bus']:
         bus[idx_bus.PD] = 1
