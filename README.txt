@@ -4,7 +4,7 @@ mosaik-pypower
 This package contains the Adapter to connect *PYPOWER* to *mosaik*.
 
 .. contents:: Table of Contents
-   :depth: 2
+   :depth: 3
 
 
 Installation and starting
