@@ -1,6 +1,17 @@
 Changelog
 =========
 
+0.7 – 2014-10-28
+----------------
+
+- [NEW] Added ability to extend the built-in branch/transformer database
+  (`issue #2`_).
+- [NEW] Wrote a lot new documentation (`issue #3`_)
+
+.. _`issue #2`: https://bitbucket.org/mosaik/mosaik-pypower/issue/2/
+.. _`issue #3`: https://bitbucket.org/mosaik/mosaik-pypower/issue/3/
+
+
 0.6.3 – 2014-09-22
 ------------------
 
@@ -10,7 +21,7 @@ Changelog
 0.6.2 – 2014-07-31
 ------------------
 
-- [CHANGE] Chache xlsx files to improve performance
+- [CHANGE] Cache xlsx files to improve performance
 - [CHANGE] Updated to mosaik-api 2.0a4.
 
 

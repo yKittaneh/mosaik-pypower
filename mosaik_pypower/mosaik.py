@@ -32,7 +32,7 @@ meta = {
                 'Vl',  # Nominal bus voltage [V]
                 'Vm',  # Voltage magnitude [V]
                 'Va',  # Voltage angle [deg]
-            ]
+            ],
         },
         'PQBus': {
             'public': False,
@@ -43,7 +43,7 @@ meta = {
                 'Vl',  # Nominal bus voltage [V]
                 'Vm',  # Voltage magnitude [V]
                 'Va',  # Voltage angle [deg]
-            ]
+            ],
         },
         'Transformer': {
             'public': False,
@@ -61,7 +61,7 @@ meta = {
                 'U_s',       # Nominal secondary voltage [V]
                 'taps',      # Dict. of possible tap turns and their values
                 'tap_turn',  # Currently active tap turn
-            ]
+            ],
         },
         'Branch': {
             'public': False,
@@ -80,7 +80,7 @@ meta = {
                 'X_per_km',  # Reactance per unit length [Ω/km]
                 'C_per_km',  # Capactity per unit length [F/km]
                 'online',    # Boolean flag (True|False)
-            ]
+            ],
         },
     },
 }
