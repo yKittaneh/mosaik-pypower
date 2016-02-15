@@ -381,7 +381,7 @@ class Excel:
         lines.update((n, rdb.Line(*d)) for n, *d in data)
 
         sheet = Excel._sheet(wb, 'branch', sheetnames)
-        for bid, fbus, tbus, btype, l, online, typ in Excel._iter(sheet, 7):
+        for bid, fbus, tbus, btype, l, online, tap in Excel._iter(sheet, 7):
             if type(bid) is float:
                 bid = str(int(bid))
             try:
@@ -390,7 +390,7 @@ class Excel:
             except KeyError:
                 info = lines[btype]
                 is_trafo = False
-            yield (is_trafo, bid, fbus, tbus, l, info, online, 0)
+            yield (is_trafo, bid, fbus, tbus, l, info, online, tap)
 
     def base_mva(raw_case, buses):
         return rdb.base_mva.get(buses[0][BUS_BASE_KV], 1)
