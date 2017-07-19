@@ -122,8 +122,8 @@ def get_cache_entries(cases, entity_map):
 
                 # Compute complex current for branches
                 if etype == 'Branch':
-                    fbus = case['bus'][branch[idx_brch.F_BUS]]
-                    tbus = case['bus'][branch[idx_brch.T_BUS]]
+                    fbus = case['bus'][int(branch[idx_brch.F_BUS])]
+                    tbus = case['bus'][int(branch[idx_brch.T_BUS])]
                     fbus_v = fbus[idx_bus.VM]
                     tbus_v = tbus[idx_bus.VM]
                     base_kv = fbus[idx_bus.BASE_KV]
