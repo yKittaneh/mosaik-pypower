@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.7.2 – 2017-07-19
+------------------
+
+- [BUGFIX] --> Issue #5: https://bitbucket.org/mosaik/mosaik-pypower/issues/5
+- [BUGFIX] --> Issue #6: https://bitbucket.org/mosaik/mosaik-pypower/issues/6
+
+
 0.7.1 – 2016-02-15
 ------------------
 
