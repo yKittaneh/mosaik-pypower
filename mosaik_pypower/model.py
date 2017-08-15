@@ -131,7 +131,7 @@ def get_cache_entries(cases, entity_map):
                     # Use side with higher voltage to calculate I
                     if fbus_v >= tbus_v:
                         ir = branch[idx_brch.PF] / fbus_v
-                        ii = branch[idx_brch.QF] / tbus_v
+                        ii = branch[idx_brch.QF] / fbus_v
                     else:
                         ir = branch[idx_brch.PT] / tbus_v
                         ii = branch[idx_brch.QT] / tbus_v
