@@ -6,7 +6,7 @@ Changelog
 
 - [BUGFIX] --> Issue #5: https://bitbucket.org/mosaik/mosaik-pypower/issues/5
 - [BUGFIX] --> Issue #6: https://bitbucket.org/mosaik/mosaik-pypower/issues/6
-- [LIB-UPDATE] --> scipy update from version 0.17.0 to version 0.19.0
+- [LIB-UPDATE] --> scipy update from version 0.17.0 to version 0.19.1
 
 
 0.7.1 – 2016-02-15
