@@ -20,7 +20,7 @@ You can run the tests with:
 
 .. code-block:: bash
 
-    $ hg clone https://bitbucket.org/mosaik/mosaik-pypower
+    $ git clone https://bitbucket.org/mosaik/mosaik-pypower
     $ cd mosaik-pypower
     $ pip install -r requirements.txt
     $ py.test  # Run tests on current Python
