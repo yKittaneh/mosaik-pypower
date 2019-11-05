@@ -3,11 +3,11 @@ from setuptools import setup, find_packages
 
 setup(
     name='mosaik-pypower',
-    version='0.7.2',
+    version='0.7.3',
     author='Stefan Scherfke',
     author_email='stefan.scherfke@offis.de',
     description='An adapter to use PYPOWER with mosaik.',
-    long_description=(open('README.txt').read() + '\n\n' +
+    long_description=(open('README.rst').read() + '\n\n' +
                       open('CHANGES.txt').read() + '\n\n' +
                       open('AUTHORS.txt').read()),
     url='https://bitbucket.org/mosaik/mosaik-pypower',

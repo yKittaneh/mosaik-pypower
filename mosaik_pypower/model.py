@@ -152,6 +152,9 @@ def get_cache_entries(cases, entity_map):
                 data['Vm'] = float('nan')
                 data['Va'] = float('nan')
             elif etype in ('Branch', 'Transformer'):
+                if etype == 'Branch':
+                    data['I_real'] = float('nan')
+                    data['I_imag'] = float('nan')
                 data['P_from'] = float('nan')
                 data['Q_from'] = float('nan')
                 data['P_to'] = float('nan')
