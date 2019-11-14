@@ -302,7 +302,7 @@ Here is an example *sim config* for mosaik:
        },
    }
 
-When you create an instance of mosaik-pypower, you can pass two parameters:
+When you create an instance of mosaik-pypower, you can pass three parameters:
 
 - *step_size* is an integer in seconds (of simulation time) and defines how
   often a power flow analysis should be performend.
@@ -315,6 +315,13 @@ When you create an instance of mosaik-pypower, you can pass two parameters:
 
   If you want to use negative values for loads and positive for feed-in, set
   this flag to ``False``.
+  
+- *converge_exception* is an optional boolean that allows to set the behavior
+  in case that the power flow does not converge.
+  
+  As default (``False``) all output attributes are set to NaN and the
+  simulation continues. If set to ``True``, an exception is thrown and the
+  simulation stops.
 
 Examples:
 
