@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.7.3 - 2021-03-04
+------------------
+
+- [BUGFIX] Require version <1.6.0 of scipy and <2.0 of xlrd, because newer versions are incompatible
+
+
 0.7.2 – 2017-07-19
 ------------------
 
