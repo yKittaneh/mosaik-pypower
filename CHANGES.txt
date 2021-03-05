@@ -5,6 +5,7 @@ Changelog
 ------------------
 
 - [BUGFIX] Require version <1.6.0 of scipy and <2.0 of xlrd, because newer versions are incompatible
+- [BUGFIX] Set I_real and I_imag in case of failure of power flow
 
 
 0.7.2 – 2017-07-19
