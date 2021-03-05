@@ -20,7 +20,7 @@ You can run the tests with:
 
 .. code-block:: bash
 
-    $ git clone https://bitbucket.org/mosaik/mosaik-pypower
+    $ git clone https://gitlab.com/mosaik/mosaik-pypower.git
     $ cd mosaik-pypower
     $ pip install -r requirements.txt
     $ py.test  # Run tests on current Python
@@ -93,7 +93,7 @@ The Excel and new JSON formats are structured in a similar way. The difference
 of the old JSON format are larger. You can find example files in our `source
 code repository`__. Below, you’ll find a detailed description of them.
 
-__ https://bitbucket.org/mosaik/mosaik-pypower/src/tip/tests/data/
+__ https://gitlab.com/mosaik/mosaik-pypower/-/tree/master/tests/data/
 
 
 Excel
@@ -149,7 +149,7 @@ columns for notes):
    / inactive (``0``)
 7. The default tap turn for a transformer (usually ``0``)
 
-__ https://bitbucket.org/mosaik/mosaik-pypower/src/tip/mosaik_pypower/resource_db.py
+__ https://gitlab.com/mosaik/mosaik-pypower/-/tree/master/mosaik_pypower/resource_db.py
 __ resource-db_
 
 Example::
