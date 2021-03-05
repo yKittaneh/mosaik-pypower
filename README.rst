@@ -149,7 +149,7 @@ columns for notes):
    / inactive (``0``)
 7. The default tap turn for a transformer (usually ``0``)
 
-__ https://bitbucket.org/mosaik/mosaik-pypower/-/tree/master/mosaik_pypower/resource_db.py
+__ https://gitlab.com/mosaik/mosaik-pypower/-/tree/master/mosaik_pypower/resource_db.py
 __ resource-db_
 
 Example::
