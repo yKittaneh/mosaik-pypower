@@ -3,20 +3,20 @@ from setuptools import setup, find_packages
 
 setup(
     name='mosaik-pypower',
-    version='0.7.2',
+    version='0.7.3',
     author='Stefan Scherfke',
-    author_email='stefan.scherfke@offis.de',
+    author_email='mosaik@offis.de',
     description='An adapter to use PYPOWER with mosaik.',
-    long_description=(open('README.txt').read() + '\n\n' +
+    long_description=(open('README.rst').read() + '\n\n' +
                       open('CHANGES.txt').read() + '\n\n' +
                       open('AUTHORS.txt').read()),
-    url='https://bitbucket.org/mosaik/mosaik-pypower',
+    url='https://gitlab.com/mosaik/mosaik-pypower',
     install_requires=[
         'PYPOWER>=4.1',
         'mosaik-api>=2.0',
         'numpy>=1.6',
-        'scipy>=0.9',
-        'xlrd>=0.9.2',
+        'scipy>=0.9,<1.6',
+        'xlrd>=0.9.2,<2',
     ],
     packages=find_packages(),
     include_package_data=True,
@@ -34,9 +34,10 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Scientific/Engineering',
     ],
 )
