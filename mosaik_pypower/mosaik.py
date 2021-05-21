@@ -14,6 +14,7 @@ from mosaik_pypower import model
 logger = logging.getLogger('pypower.mosaik')
 
 meta = {
+    'type': 'time-based',
     'models': {
         'Grid': {
             'public': True,
@@ -102,7 +103,8 @@ class PyPower(mosaik_api.Simulator):
         self._ppcs = []  # The pypower cases
         self._cache = {}  # Cache for load flow outputs
 
-    def init(self, sid, step_size, pos_loads=True, converge_exception=False):
+    def init(self, sid, time_resolution, step_size, pos_loads=True,
+             converge_exception=False):
         logger.debug('Power flow will be computed every %d seconds.' %
                      step_size)
         signs = ('positive', 'negative')
@@ -157,7 +159,7 @@ class PyPower(mosaik_api.Simulator):
 
         return grids
 
-    def step(self, time, inputs):
+    def step(self, time, inputs, max_advance):
         for ppc in self._ppcs:
             model.reset_inputs(ppc)
 

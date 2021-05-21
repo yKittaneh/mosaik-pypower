@@ -64,7 +64,7 @@ def all_close(data, expected, ndigits=2):
 def test_mosaik():
     """Test the API implementation without the network stack."""
     sim = mosaik.PyPower()
-    meta = sim.init(0, 60, pos_loads=(pos_loads > 0))
+    meta = sim.init(0, 1., 60, pos_loads=(pos_loads > 0))
     assert list(sorted(meta['models'].keys())) == [
         'Branch', 'Grid', 'PQBus', 'RefBus', 'Transformer']
 
@@ -88,7 +88,7 @@ def test_mosaik():
 
     input_data = get_input_data()
 
-    next_step = sim.step(0, input_data)
+    next_step = sim.step(0, input_data, 60)
     assert next_step == 60
 
     data = sim.get_data({
@@ -133,7 +133,7 @@ def test_mosaik():
 
 def test_multiple_grids():
     sim = mosaik.PyPower()
-    sim.init(0, 60, pos_loads=(pos_loads > 0))
+    sim.init(0, 1., 60, pos_loads=(pos_loads > 0))
 
     entities_a = sim.create(2, 'Grid', grid_file)
     entities_b = sim.create(1, 'Grid', grid_file)
@@ -146,7 +146,7 @@ def test_multiple_grids():
 
     input_data = get_input_data()
 
-    sim.step(0, input_data)
+    sim.step(0, input_data, 60)
 
     data = sim.get_data({
         '0-Grid': ['P', 'Q'],
@@ -175,13 +175,13 @@ def test_multiple_grids():
 )
 def test_converge_setting(converge_exception):
     simulator = mosaik.PyPower()
-    meta = simulator.init(0, 60, pos_loads=(pos_loads > 0),
+    meta = simulator.init(0, 1., 60, pos_loads=(pos_loads > 0),
                           converge_exception=converge_exception)
     entities = simulator.create(1, 'Grid', grid_file)
     
     input_data = get_input_data(converge=False)
     
-    next_step = simulator.step(0, input_data)
+    next_step = simulator.step(0, input_data, 60)
     
     data = simulator.get_data({
         '0-Grid': ['P'],
