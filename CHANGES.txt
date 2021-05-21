@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.8.0 – 2021-05-21
+----------------
+
+- [CHANGE] Updated to mosaik-api 3.0.
+- [NEW] converge_exception can be set to throw an exception if load flow
+  doesn't converge
+
+
 0.7.3 - 2021-03-04
 ------------------
 
