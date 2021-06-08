@@ -42,7 +42,7 @@ pypi:
         -   python -m pip install --quiet --upgrade -r requirements.txt
         -   python setup.py sdist bdist_wheel
         -   twine check dist/*
-        -   twine upload  --repository-url https://test.pypi.org/legacy/ --username $MOSAIK_PYPI_USER --password $MOSAIK_PYPI_PASSWORD --verbose dist/*
+        -   twine upload  --repository-url https://upload.pypi.org/legacy/ --username $MOSAIK_PYPI_USER --password $MOSAIK_PYPI_PASSWORD --verbose dist/*
     stage: release
     only:
       - tags
