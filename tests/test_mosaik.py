@@ -1,4 +1,6 @@
+import pytest
 import os.path
+from math import isnan
 
 from mosaik_pypower import mosaik
 
@@ -6,6 +8,31 @@ from mosaik_pypower import mosaik
 kV = 1000
 MW = 1000 ** 2
 pos_loads = -1  # Loads positive, see mosaik_pypower.mosaik.PyPower.__init__
+
+grid_file = os.path.join(os.path.dirname(__file__), 'data', 'test_case_b.json')
+
+
+def get_input_data(converge=True):
+    if converge:
+        P_Bus0 = 1.76
+    else:
+        P_Bus0 = 10000.
+    input_data = {
+        '0-Bus0': {'P': [P_Bus0], 'Q': [.95]},
+        '0-Bus1': {'P': [.8, -.2], 'Q': [.2, 0]},
+        '0-Bus2': {'P': [-1.98], 'Q': [-.28]},
+        '0-Bus3': {'P': [.85], 'Q': [.53]},
+    }
+
+    # Correct input data by converting to MW and changing the sign:
+    for d in input_data.values():
+        for k, v in d.items():
+            # Convert values to W and the list to a dict:
+            d[k] = {i: x * MW for i, x in enumerate(v)}
+            if k == 'P':
+                d[k] = {key: val * pos_loads for key, val in d[k].items()}
+                
+    return input_data
 
 
 def all_close(data, expected, ndigits=2):
@@ -37,9 +64,7 @@ def all_close(data, expected, ndigits=2):
 def test_mosaik():
     """Test the API implementation without the network stack."""
     sim = mosaik.PyPower()
-    grid_file = os.path.join(os.path.dirname(__file__), 'data',
-                             'test_case_b.json')
-    meta = sim.init(0, 60, pos_loads=(pos_loads > 0))
+    meta = sim.init(0, 1., 60, pos_loads=(pos_loads > 0))
     assert list(sorted(meta['models'].keys())) == [
         'Branch', 'Grid', 'PQBus', 'RefBus', 'Transformer']
 
@@ -61,21 +86,9 @@ def test_mosaik():
         ],
     }]
 
-    data = {
-        '0-Bus0': {'P': [1.76], 'Q': [.95]},
-        '0-Bus1': {'P': [.8, -.2], 'Q': [.2, 0]},
-        '0-Bus2': {'P': [-1.98], 'Q': [-.28]},
-        '0-Bus3': {'P': [.85], 'Q': [.53]},
-    }
-    # Correct input data by converting to MW and changing the sign:
-    for d in data.values():
-        for k, v in d.items():
-            # Convert values to W and the list to a dict:
-            d[k] = {i: x * MW for i, x in enumerate(v)}
-            if k == 'P':
-                d[k] = {key: val * pos_loads for key, val in d[k].items()}
+    input_data = get_input_data()
 
-    next_step = sim.step(0, data)
+    next_step = sim.step(0, input_data, 60)
     assert next_step == 60
 
     data = sim.get_data({
@@ -120,9 +133,7 @@ def test_mosaik():
 
 def test_multiple_grids():
     sim = mosaik.PyPower()
-    grid_file = os.path.join(os.path.dirname(__file__), 'data',
-                             'test_case_b.json')
-    sim.init(0, 60, pos_loads=(pos_loads > 0))
+    sim.init(0, 1., 60, pos_loads=(pos_loads > 0))
 
     entities_a = sim.create(2, 'Grid', grid_file)
     entities_b = sim.create(1, 'Grid', grid_file)
@@ -133,21 +144,9 @@ def test_multiple_grids():
     assert entities_a[1]['eid'] == '1-grid'
     assert entities_b[0]['eid'] == '2-grid'
 
-    data = {
-        '0-Bus0': {'P': [1.76], 'Q': [.95]},
-        '0-Bus1': {'P': [.8, -.2], 'Q': [.2, 0]},
-        '0-Bus2': {'P': [-1.98], 'Q': [-.28]},
-        '0-Bus3': {'P': [.85], 'Q': [.53]},
-    }
-    # Correct input data by converting to MW and changing the sign:
-    for d in data.values():
-        for k, v in d.items():
-            # Convert values to W and the list to a dict:
-            d[k] = {i: x * MW for i, x in enumerate(v)}
-            if k == 'P':
-                d[k] = {key: val * pos_loads for key, val in d[k].items()}
+    input_data = get_input_data()
 
-    sim.step(0, data)
+    sim.step(0, input_data, 60)
 
     data = sim.get_data({
         '0-Grid': ['P', 'Q'],
@@ -165,3 +164,26 @@ def test_multiple_grids():
         '1-Bus0': {'Q': 0,      'P': 0},
         '2-Bus0': {'Q': 0,      'P': 0},
     }, ndigits=0)
+
+
+@pytest.mark.parametrize(
+    "converge_exception",
+    [
+     False,
+     pytest.param(True, marks=pytest.mark.xfail(raises=RuntimeError)),
+     ],
+)
+def test_converge_setting(converge_exception):
+    simulator = mosaik.PyPower()
+    meta = simulator.init(0, 1., 60, pos_loads=(pos_loads > 0),
+                          converge_exception=converge_exception)
+    entities = simulator.create(1, 'Grid', grid_file)
+    
+    input_data = get_input_data(converge=False)
+    
+    next_step = simulator.step(0, input_data, 60)
+    
+    data = simulator.get_data({
+        '0-Grid': ['P'],
+    })
+    assert isnan(data['0-Grid']['P'])

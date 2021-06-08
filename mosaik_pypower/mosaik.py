@@ -14,6 +14,7 @@ from mosaik_pypower import model
 logger = logging.getLogger('pypower.mosaik')
 
 meta = {
+    'type': 'time-based',
     'models': {
         'Grid': {
             'public': True,
@@ -102,7 +103,8 @@ class PyPower(mosaik_api.Simulator):
         self._ppcs = []  # The pypower cases
         self._cache = {}  # Cache for load flow outputs
 
-    def init(self, sid, step_size, pos_loads=True):
+    def init(self, sid, time_resolution, step_size, pos_loads=True,
+             converge_exception=False):
         logger.debug('Power flow will be computed every %d seconds.' %
                      step_size)
         signs = ('positive', 'negative')
@@ -111,6 +113,7 @@ class PyPower(mosaik_api.Simulator):
 
         self.step_size = step_size
         self.pos_loads = 1 if pos_loads else -1
+        self._converge_exception = converge_exception
 
         return self.meta
 
@@ -156,7 +159,7 @@ class PyPower(mosaik_api.Simulator):
 
         return grids
 
-    def step(self, time, inputs):
+    def step(self, time, inputs, max_advance):
         for ppc in self._ppcs:
             model.reset_inputs(ppc)
 
@@ -176,6 +179,10 @@ class PyPower(mosaik_api.Simulator):
         res = []
         for ppc in self._ppcs:
             res.append(model.perform_powerflow(ppc))
+            if self._converge_exception and not res[-1]['success']:
+                raise RuntimeError(
+                    'Loadflow did not converge for eid "%s" at time %i!' %
+                    (eid, time))
         self._cache = model.get_cache_entries(res, self._entities)
 
         return time + self.step_size
