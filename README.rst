@@ -1,7 +1,7 @@
 mosaik-pypower
 ==============
 
-This package contains the Adapter to connect *PYPOWER* to *mosaik*.
+This package contains the adapter to connect *PYPOWER* to *mosaik*.
 
 .. contents:: Table of Contents
    :depth: 3
@@ -23,12 +23,12 @@ You can run the tests with:
     $ git clone https://gitlab.com/mosaik/mosaik-pypower.git
     $ cd mosaik-pypower
     $ pip install -r requirements.txt
-    $ py.test  # Run tests on current Python
+    $ pytest  # Run tests on current Python
     $ tox      # Run tests on all supported Python versions
 
 You can either start mosaik-pypower as normal process or use it as a library.
-If you run it via the command line, you need to pass the adress that mosaik is
-listening on:
+If you run it via the command line, you need to pass the address that mosaik
+is listening on:
 
 .. code-block:: bash
 
@@ -59,9 +59,9 @@ or slack bus), PQ buses and PU buses.
 For PQ buses, the (re)active power *P* and *Q* are given, PYPOWER will
 calculate the voltage magnitude and angle for these nodes. PU buses provide
 active power and a constant voltage, thus PYPOWER computes the reactive power
-for these buses. Mosaik-pypower current *only supports PQ buses*, because they
-are more general and if you model your power grid for mosaik, you do not know
-in advance what kind of unit (consumer, producer, …) will be connected to
+for these buses. Mosaik-pypower currently *only supports PQ buses*, because
+they are more general and if you model your power grid for mosaik, you do not
+know in advance what kind of unit (consumer, producer, …) will be connected to
 a bus.
 
 Every grid needs to have *exactly one* reference bus. It has a constant voltage
@@ -302,7 +302,7 @@ Here is an example *sim config* for mosaik:
        },
    }
 
-When you create an instance of mosaik-pypower, you can pass two parameters:
+When you create an instance of mosaik-pypower, you can pass three parameters:
 
 - *step_size* is an integer in seconds (of simulation time) and defines how
   often a power flow analysis should be performend.
@@ -315,6 +315,13 @@ When you create an instance of mosaik-pypower, you can pass two parameters:
 
   If you want to use negative values for loads and positive for feed-in, set
   this flag to ``False``.
+  
+- *converge_exception* is an optional boolean that allows to set the behavior
+  in case that the power flow does not converge.
+  
+  As default (``False``) all output attributes are set to NaN and the
+  simulation continues. If set to ``True``, an exception is thrown and the
+  simulation stops.
 
 Examples:
 
