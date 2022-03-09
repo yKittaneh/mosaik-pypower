@@ -10,7 +10,7 @@ setup(
     long_description=(open('README.rst').read() + '\n\n' +
                       open('CHANGES.txt').read() + '\n\n' +
                       open('AUTHORS.txt').read()),
-    url='https://gitlab.com/mosaik/mosaik-pypower',
+    url='https://gitlab.com/mosaik/components/energy/mosaik-pypower',
     install_requires=[
         'PYPOWER>=4.1',
         'mosaik-api>=3.0',
