@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.8.1 – 2022-03-23
+------------------
+- [BUGFIX] Removed limitation for scypi and increased python compatibility to 3.10.
+
 0.8.0 – 2021-05-21
 ------------------
 
