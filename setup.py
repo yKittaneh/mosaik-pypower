@@ -14,7 +14,7 @@ setup(
     install_requires=[
         'PYPOWER>=4.1',
         'mosaik-api>=3.0',
-        'numpy>=1.6',
+        'numpy>=1.6,<1.23',
         'scipy>=0.9,<1.6',
         'xlrd>=0.9.2,<2',
     ],
