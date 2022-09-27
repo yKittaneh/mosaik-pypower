@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.8.2 – 2022-09-27
+------------------
+- [BUGFIX] Added restriction to numpy <1.23, because newer versions are incompatible with current PYPOWER version
+
 0.8.1 – 2022-03-23
 ------------------
 - [BUGFIX] Removed limitation for scypi and increased python compatibility to 3.10.

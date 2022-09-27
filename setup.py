@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='mosaik-pypower',
-    version='0.8.1',
+    version='0.8.2',
     author='Stefan Scherfke',
     author_email='mosaik@offis.de',
     description='An adapter to use PYPOWER with mosaik.',
@@ -14,7 +14,7 @@ setup(
     install_requires=[
         'PYPOWER>=4.1',
         'mosaik-api>=3.0',
-        'numpy>=1.6',
+        'numpy>=1.6,<1.23',
         'scipy>=0.9',
         'xlrd>=0.9.2,<2',
     ],
