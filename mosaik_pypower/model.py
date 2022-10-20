@@ -75,7 +75,8 @@ def reset_inputs(case):
 
 def set_inputs(case, etype, idx, data, static):
     if etype == 'PQBus':
-        case['bus'][idx][idx_bus.PD] = data['P'] / BUS_PQ_FACTOR
+        if 'P' in data:
+            case['bus'][idx][idx_bus.PD] = data['P'] / BUS_PQ_FACTOR
         if 'Q' in data:
             # Some models may not provide a Q
             case['bus'][idx][idx_bus.QD] = data['Q'] / BUS_PQ_FACTOR
@@ -117,6 +118,7 @@ def get_cache_entries(cases, entity_map):
                 data['Q'] = bus[idx_bus.QD] * BUS_PQ_FACTOR
                 data['Vm'] = bus[idx_bus.VM] * attrs['static']['Vl']
                 data['Va'] = bus[idx_bus.VA]
+                # data['excess_pv_power'] = bus[31]
             elif etype in ('Branch', 'Transformer'):
                 branch = case['branch'][idx]
 
@@ -151,6 +153,7 @@ def get_cache_entries(cases, entity_map):
                 data['Q'] = float('nan')
                 data['Vm'] = float('nan')
                 data['Va'] = float('nan')
+                data['excess_pv_power'] = float('nan')
             elif etype in ('Branch', 'Transformer'):
                 if etype == 'Branch':
                     data['I_real'] = float('nan')

@@ -4,12 +4,13 @@ This module implements the mosaik API for `PYPOWER
 
 """
 from __future__ import division
+
 import logging
 import os
+
 import mosaik_api
 
 from mosaik_pypower import model
-
 
 logger = logging.getLogger('pypower.mosaik')
 
@@ -18,7 +19,7 @@ meta = {
     'models': {
         'Grid': {
             'public': True,
-            'params': [
+            'params': [ # todo: still need these params?
                 'gridfile',  # Name of the file containing the grid topology.
                 'sheetnames',  # Mapping of Excel sheet names, optional.
             ],
@@ -39,28 +40,32 @@ meta = {
             'public': False,
             'params': [],
             'attrs': [
-                'P',   # Active power [W]
-                'Q',   # Reactive power [VAr]
+                'P',  # Active power [W]
+                'Q',  # Reactive power [VAr]
                 'Vl',  # Nominal bus voltage [V]
                 'Vm',  # Voltage magnitude [V]
                 'Va',  # Voltage angle [deg]
+                'excess_pv_power',
+                'container_need',
+                'battery_action',
+                'temp' # todo: need temp? if no, remove from everywhere
             ],
         },
         'Transformer': {
             'public': False,
             'params': [],
             'attrs': [
-                'P_from',    # Active power at "from" side [W]
-                'Q_from',    # Reactive power at "from" side [VAr]
-                'P_to',      # Active power at "to" side [W]
-                'Q_to',      # Reactive power at "to" side [VAr]
-                'S_r',       # Rated apparent power [VA]
-                'I_max_p',   # Maximum current on primary side [A]
-                'I_max_s',   # Maximum current on secondary side [A]
-                'P_loss',    # Active power loss [W]
-                'U_p',       # Nominal primary voltage [V]
-                'U_s',       # Nominal secondary voltage [V]
-                'taps',      # Dict. of possible tap turns and their values
+                'P_from',  # Active power at "from" side [W]
+                'Q_from',  # Reactive power at "from" side [VAr]
+                'P_to',  # Active power at "to" side [W]
+                'Q_to',  # Reactive power at "to" side [VAr]
+                'S_r',  # Rated apparent power [VA]
+                'I_max_p',  # Maximum current on primary side [A]
+                'I_max_s',  # Maximum current on secondary side [A]
+                'P_loss',  # Active power loss [W]
+                'U_p',  # Nominal primary voltage [V]
+                'U_s',  # Nominal secondary voltage [V]
+                'taps',  # Dict. of possible tap turns and their values
                 'tap_turn',  # Currently active tap turn
             ],
         },
@@ -68,19 +73,19 @@ meta = {
             'public': False,
             'params': [],
             'attrs': [
-                'P_from',    # Active power at "from" side [W]
-                'Q_from',    # Reactive power at "from" side [VAr]
-                'P_to',      # Active power at "to" side [W]
-                'Q_to',      # Reactive power at "to" side [VAr]
-                'I_real',    # Branch current (real part) [A]
-                'I_imag',    # Branch current (imaginary part) [A]
-                'S_max',     # Maximum apparent power [VA]
-                'I_max',     # Maximum current [A]
-                'length',    # Line length [km]
+                'P_from',  # Active power at "from" side [W]
+                'Q_from',  # Reactive power at "from" side [VAr]
+                'P_to',  # Active power at "to" side [W]
+                'Q_to',  # Reactive power at "to" side [VAr]
+                'I_real',  # Branch current (real part) [A]
+                'I_imag',  # Branch current (imaginary part) [A]
+                'S_max',  # Maximum apparent power [VA]
+                'I_max',  # Maximum current [A]
+                'length',  # Line length [km]
                 'R_per_km',  # Resistance per unit length [Ω/km]
                 'X_per_km',  # Reactance per unit length [Ω/km]
                 'C_per_km',  # Capactity per unit length [F/km]
-                'online',    # Boolean flag (True|False)
+                'online',  # Boolean flag (True|False)
             ],
         },
     },
@@ -92,6 +97,9 @@ class PyPower(mosaik_api.Simulator):
         super(PyPower, self).__init__(meta)
         self.step_size = None
 
+        # todo: implement selling extra energy back to the grid ==> net metering extra energy means leftover energy
+        #  after the battery is full and the container needs are fulfilled
+
         # In PYPOWER loads are positive numbers and feed-in is expressed via
         # negative numbers. "init()" will that this flag to "1" in this case.
         # If incoming values for loads are negative and feed-in is positive,
@@ -102,6 +110,18 @@ class PyPower(mosaik_api.Simulator):
         self._relations = []  # List of pair-wise related entities (IDs)
         self._ppcs = []  # The pypower cases
         self._cache = {}  # Cache for load flow outputs
+
+        self.control_node = None
+
+        self.container_need = 0
+        self.pv_power = 0
+        self.battery_power = 0
+        self.battery_max_capacity = 50000
+
+        self.grid_power = 0
+        self.battery_action = None
+
+        self.counter = 0
 
     def init(self, sid, time_resolution, step_size, pos_loads=True,
              converge_exception=False):
@@ -157,6 +177,9 @@ class PyPower(mosaik_api.Simulator):
                 'children': children,
             })
 
+        # todo: change to compute node. Also, what does it do?
+        self.control_node = get_control_node(entities)
+
         return grids
 
     def step(self, time, inputs, max_advance):
@@ -171,10 +194,29 @@ class PyPower(mosaik_api.Simulator):
             for name, values in attrs.items():
                 # values is a dict of p/q values, sum them up
                 attrs[name] = sum(float(v) for v in values.values())
-                if name == 'P':
+                if name == 'P' and eid == '0-node_a1':
                     attrs[name] *= self.pos_loads
+                    if values['CSV-0.PV_0'] is None or values['BatterySimulator-0.batteryNode'] is None:
+                        raise RuntimeError('P input value expected from battery, and PV nodes.')
+
+                    self.pv_power = abs(values['CSV-0.PV_0'])
+                    self.battery_power = values['BatterySimulator-0.batteryNode']
+
+                elif name == 'container_need' and eid == '0-node_a1':
+                    if values['ComputeNodeSimulator-0.computeNode'] is None:
+                        raise RuntimeError('[container_need] input value expected from compute node.')
+                    self.container_need = values['ComputeNodeSimulator-0.computeNode']
+
+                elif name == 'temp' and eid == '0-node_a1':
+                    self.battery_power = list(values.values())[0]
+
+                else:
+                    print('Unexpected attribute requested {}',format(attrs.items()))
+                    raise RuntimeError('Unexpected attribute requested {}',format(attrs.items()))
 
             model.set_inputs(ppc, etype, idx, attrs, static)
+
+        self.handle_power_input()
 
         res = []
         for ppc in self._ppcs:
@@ -191,15 +233,163 @@ class PyPower(mosaik_api.Simulator):
         data = {}
         for eid, attrs in outputs.items():
             for attr in attrs:
-                try:
-                    val = self._cache[eid][attr]
-                    if attr == 'P':
-                        val *= self.pos_loads
-                except KeyError:
-                    val = self._entities[eid]['static'][attr]
+                if attr == 'battery_action':
+                    val = self.battery_action
+                    self.battery_action = None
+                elif attr == 'excess_pv_power': # todo: not needed anymore? remove but add net metering
+                    if self.counter < 3:
+                        val = 1000
+                        self.counter += 1
+                    else:
+                        continue
+                else:
+                    try:
+                        val = self._cache[eid][attr]
+                        if attr == 'P':
+                            val *= self.pos_loads
+                    except KeyError:
+                        val = self._entities[eid]['static'][attr]
                 data.setdefault(eid, {})[attr] = val
 
         return data
+
+    def handle_power_input(self):
+
+        # 1- check if there is pv, use all pv or as much needed, if we have extra then charge battery, if we still have extra then net-metering
+        # 2- if pv is not enough then check battery, use all or as much needed
+        # 3- if battery and pv are not enough then take the rest from grid
+        #
+        # if self.pv_power + self.battery_power >= self.container_need:
+        #   then take all pv
+        #   if we have extra pv:
+        #       then charge battery with rest
+        #   if pv is enough exactly to cover container need: then do nothing
+        #   if pv is not enough:
+        #       then if battery is enough to cover for ....
+        #
+
+        if self.pv_power == 0 and self.battery_power == 0:
+            # no pv and no battery power, need to take all from grid
+            print('no pv and no battery power, need to take all from grid')
+            # todo: need to do something here to take from the grid?
+
+        else:
+            if self.pv_power > 0:
+                print('we have pv power')
+                if self.pv_power >= self.container_need:
+                    print('pv power is larger than or equal to container node need')
+                    pv_extra_power = self.pv_power - self.container_need
+                    # todo: give power to container, do something? send power to container (equal to self.container_need). Same applies below everytime we send power to the container
+                    if pv_extra_power == 0:
+                        print('pv power and container need are equal, no pv extra power, do nothing')
+                        self.battery_action = 'noAction'
+
+                    if pv_extra_power > 0:
+                        print('still have extra pv power, checking battery')
+                        battery_full_charge_need = self.battery_max_capacity - self.battery_power
+                        if battery_full_charge_need > 0:
+                            print('battery not full [current charge = {}], going to charge it'.format(self.battery_power))
+                            if battery_full_charge_need >= pv_extra_power:
+                                print('using all pv extra power [{}] to charge battery'.format(pv_extra_power))
+                                self.battery_action = 'charge:' + str(pv_extra_power)
+                            else:
+                                print('we have more pv extra power than the battery needs, using some of the pv extra power [{}] to charge battery and the rest will be net-metered'.format(battery_full_charge_need))
+                                self.battery_action = 'charge:' + str(battery_full_charge_need)
+                                pv_extra_power = pv_extra_power - battery_full_charge_need
+                                print('using rest of pv extra power [{}] for net-metering'.format(pv_extra_power))
+                                # todo: need to do something here for net metering?
+                else:  # pv_extra_power < self.container_need
+                    print('pv extra power less than container need, we need to use battery to cover, checking battery')
+                    if self.battery_power > 0:
+                        print('battery has [{}] power, will use some or all for the container'.format(self.battery_power))
+                        battery_extra_power = self.battery_power - self.container_need
+                        if battery_extra_power >= 0:
+                            print('battery has sufficient power to cover container need [{}]'.format(self.container_need))
+                            self.battery_action = 'discharge:' + str(self.container_need)
+                        else:
+                            print('battery power does not cover container need [{}], will take it all and cover the rest from the grid'.format(self.container_need))
+                            self.battery_action = 'discharge:' + str(self.battery_power)
+                            # todo: take power from the grid (equal to abs(battery_extra_power)), do something?
+                    else: # self.battery_power = 0
+                        print('battery is empty, will use grid power')
+                        # todo: take power from the grid (equal to self.container_need), do something? same as the todo above, maybe extract function?
+
+            else:  # no pv_power # todo: this block is the same as the one above, extract method
+                print('no pv_power, will check battery')
+                if self.battery_power > 0:
+                    print('battery has [{}] power, will use some or all for the container'.format(self.battery_power))
+                    battery_extra_power = self.battery_power - self.container_need
+                    if battery_extra_power >= 0:
+                        print('battery has sufficient power to cover container need [{}]'.format(self.container_need))
+                        self.battery_action = 'discharge:' + str(self.container_need)
+                    else:
+                        print('battery power does not cover container need [{}], will take it all and cover the rest from the grid'.format(self.container_need))
+                        self.battery_action = 'discharge:' + str(self.battery_power)
+                        # todo: take power from the grid (equal to abs(battery_extra_power)), do something?
+                else:
+                    print('battery is empty, will use grid power')
+                    # todo: take power from the grid (equal to self.container_need), do something? same as the todo above, maybe extract function?
+
+        # todo: refactor the below code and remove duplicate code
+        # if self.pv_power > 0:
+        #     pv_supply_demand_diff = self.pv_power - self.container_need
+        #     if pv_supply_demand_diff > 0:
+        #         # extra pv power, charge battery
+        #         # -- charge battery
+        #         print('charge battery: ' + str(pv_supply_demand_diff))
+        #         self.battery_action = 'charge:' + str(pv_supply_demand_diff)
+        #     elif self.battery_power > 0:
+        #         # pv power not enough, use battery
+        #         if self.battery_power >= abs(pv_supply_demand_diff):
+        #             # battery has enough power, discharge the used power amount
+        #             # -- discharge battery
+        #             print('discharge battery: ' + str(abs(pv_supply_demand_diff)))
+        #             self.battery_action = 'discharge:' + str(abs(pv_supply_demand_diff))
+        #         else:
+        #             # battery power not enough, take it all and take the rest from grid
+        #             pv_and_battery_power = self.pv_power + self.battery_power
+        #             needed_power_from_the_grid = self.container_need - pv_and_battery_power
+        #             # todo: need to do something with needed_power_from_the_grid?
+        #             # -- discharge all battery
+        #             print('discharge all battery: ' + str(self.battery_power))
+        #             self.battery_action = 'discharge:' + str(self.battery_power)
+        #     else:
+        #         # battery power not enough, take it all and take the rest from grid
+        #         pv_and_battery_power = self.pv_power + self.battery_power
+        #         needed_power_from_the_grid = self.container_need - pv_and_battery_power
+        #         # todo: need to do something with needed_power_from_the_grid?
+        #         if self.battery_power > 0:
+        #             # -- discharge all battery
+        #             print('discharge all battery: ' + str(self.battery_power))
+        #             self.battery_action = 'discharge:' + str(self.battery_power)
+        # elif self.battery_power > 0:
+        #     # pv power not enough, use battery
+        #     if self.battery_power >= self.container_need:
+        #         # battery has enough power, discharge the used power amount
+        #         # -- discharge battery
+        #         print('discharge battery: ' + str(self.container_need))
+        #         self.battery_action = 'discharge:' + str(self.container_need)
+        #
+        #     else:
+        #         # battery power not enough, take it all and take the rest from grid
+        #         pv_and_battery_power = self.pv_power + self.battery_power
+        #         needed_power_from_the_grid = self.container_need - pv_and_battery_power
+        #         # -- discharge all battery
+        #         print('discharge all battery: ' + str(self.battery_power))
+        #         self.battery_action = 'discharge:' + str(self.battery_power)
+        #         # todo: need to do something with needed_power_from_the_grid?
+        # else:
+        #     # no pv and no battery power, need to take all from grid
+        #     print('no pv and no battery power, need to take all from grid')
+        #     # todo: need to do something here?
+
+
+def get_control_node(entities):
+    for item in entities.items():
+        if item[0] == '0-node_a1':
+            return item
+    else:
+        raise ValueError('Grid node 0-node_a1 not found')
 
 
 def main():
