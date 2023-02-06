@@ -45,11 +45,27 @@ meta = {
                 'Vl',  # Nominal bus voltage [V]
                 'Vm',  # Voltage magnitude [V]
                 'Va',  # Voltage angle [deg]
+                # 'net_metering_power',
+                # 'container_need',
+                # 'battery_action',
+            ],
+        },
+        'PowerNode': {
+            'public': False,
+            'params': [],
+            'attrs': [
+                'P',  # Active power [W]
+                'Q',  # Reactive power [VAr]
+                'Vl',  # Nominal bus voltage [V]
+                'Vm',  # Voltage magnitude [V]
+                'Va',  # Voltage angle [deg]
                 'net_metering_power',
                 'container_need',
                 'battery_action',
+                'grid_energy'
             ],
         },
+
         'Transformer': {
             'public': False,
             'params': [],
@@ -110,12 +126,13 @@ class PyPower(mosaik_api.Simulator):
         self.container_need = 0
         self.pv_power = 0
         self.battery_power = 0
-        self.battery_max_capacity = 50000
+        self.battery_max_capacity = None
         self.battery_action = None
         self.net_metering_power = 0
+        self.grid_energy = 0
 
-    def init(self, sid, time_resolution, step_size, pos_loads=True,
-             converge_exception=False):
+    def init(self, sid, time_resolution, step_size, battery_capacity,
+             pos_loads=True, converge_exception=False):
         logger.debug('Power flow will be computed every %d seconds.' %
                      step_size)
         signs = ('positive', 'negative')
@@ -123,6 +140,7 @@ class PyPower(mosaik_api.Simulator):
                      signs if pos_loads else tuple(reversed(signs)))
 
         self.step_size = step_size
+        self.battery_max_capacity = battery_capacity
         self.pos_loads = 1 if pos_loads else -1
         self._converge_exception = converge_exception
 
@@ -155,6 +173,9 @@ class PyPower(mosaik_api.Simulator):
                 if attrs['etype'] in ['Transformer', 'Branch']:
                     relations = attrs['related']
 
+                if "node_a1" in eid:
+                    attrs['etype'] = 'PowerNode'
+
                 children.append({
                     'eid': eid,
                     'type': attrs['etype'],
@@ -184,11 +205,11 @@ class PyPower(mosaik_api.Simulator):
                 attrs[name] = sum(float(v) for v in values.values())
                 if name == 'P' and eid == '0-node_a1':
                     attrs[name] *= self.pos_loads
-                    if values['CSV-0.PV_0'] is None or values['BatterySimulator-0.batteryNode'] is None:
+                    if values['CSV-0.PV_0'] is None or values['BatterySimulator-0.battery'] is None:
                         raise RuntimeError('[P] input value expected from battery and PV nodes.')
 
                     self.pv_power = abs(values['CSV-0.PV_0'])
-                    self.battery_power = values['BatterySimulator-0.batteryNode']
+                    self.battery_power = values['BatterySimulator-0.battery']
 
                 elif name == 'container_need' and eid == '0-node_a1':
                     if values['ComputeNodeSimulator-0.computeNode'] is None:
@@ -228,6 +249,11 @@ class PyPower(mosaik_api.Simulator):
                     if val > 0:
                         print('self.net_metering_power = {}'.format(self.net_metering_power))
                     self.net_metering_power = 0
+                elif attr == 'grid_energy':
+                    val = self.grid_energy
+                    if val > 0:
+                        print('self.grid_energy = {}'.format(self.grid_energy))
+                    self.grid_energy = 0
                 else:
                     try:
                         val = self._cache[eid][attr]
@@ -241,32 +267,14 @@ class PyPower(mosaik_api.Simulator):
 
     def handle_power_input(self):
 
-        # 1- check if there is pv, use all pv or as much needed, if we have extra then charge battery, if we still have extra then net-metering
-        # 2- if pv is not enough then check battery, use all or as much needed
-        # 3- if battery and pv are not enough then take the rest from grid
-        #
-        # if self.pv_power + self.battery_power >= self.container_need:
-        #   then take all pv
-        #   if we have extra pv:
-        #       then charge battery with rest
-        #   if pv is enough exactly to cover container need: then do nothing
-        #   if pv is not enough:
-        #       then if battery is enough to cover for ....
-        #
-
         if self.pv_power == 0 and self.battery_power == 0:
-            # no pv and no battery power, need to take all from grid
-            #print('no pv and no battery power, need to take all from grid')
-            self.pv_power = 0
-            # todo: need to do something here to take from the grid?
+            self.grid_energy = self.container_need
 
         else:
             if self.pv_power > 0:
-                #print('we have pv power')
                 if self.pv_power >= self.container_need:
                     #print('pv power is larger than or equal to container node need')
                     pv_extra_power = self.pv_power - self.container_need
-                    # todo: give power to container, do something? I guess do nothing
                     if pv_extra_power == 0:
                         #print('pv power and container need are equal, no pv extra power, do nothing')
                         self.battery_action = 'noAction'
@@ -283,25 +291,27 @@ class PyPower(mosaik_api.Simulator):
                                 #print('we have more pv extra power than the battery needs, using some of the pv extra power [{}] to charge battery and the rest will be net-metered'.format(battery_full_charge_need))
                                 self.battery_action = 'charge:' + str(battery_full_charge_need)
                                 pv_extra_power = pv_extra_power - battery_full_charge_need
-                                #print('using rest of pv extra power [{}] for net-metering'.format(pv_extra_power))
+                                print('using rest of pv extra power [{}] for net-metering'.format(pv_extra_power))
                                 self.net_metering_power += pv_extra_power
-                else:  # pv_extra_power < self.container_need
-                    #rint('pv extra power less than container need, we need to use battery to cover, checking battery')
+                else:
+                    # print('pv extra power less than container need, we need to use battery to cover, checking battery')
+                    needed_extra_power = self.container_need - self.pv_power
                     if self.battery_power > 0:
                         #print('battery has [{}] power, will use some or all for the container'.format(self.battery_power))
-                        battery_extra_power = self.battery_power - self.container_need
+                        battery_extra_power = self.battery_power - needed_extra_power
                         if battery_extra_power >= 0:
                             #print('battery has sufficient power to cover container need [{}]'.format(self.container_need))
-                            self.battery_action = 'discharge:' + str(self.container_need)
+                            self.battery_action = 'discharge:' + str(needed_extra_power)
                         else:
                             #print('battery power does not cover container need [{}], will take it all and cover the rest from the grid'.format(self.container_need))
                             self.battery_action = 'discharge:' + str(self.battery_power)
-                            # todo: take power from the grid (equal to abs(battery_extra_power)), do something? do nothing
-                    #else: # self.battery_power = 0
+                            # todo: take power from the grid (equal to abs(battery_extra_power)), do something? coded!
+                            self.grid_energy = abs(battery_extra_power)
+                    else: # self.battery_power = 0
                         #print('battery is empty, will use grid power')
-                        # todo: take power from the grid (equal to self.container_need), do something? same as the todo above, maybe extract function?
+                        self.grid_energy = needed_extra_power
 
-            else:  # no pv_power # todo: this block is the same as the one above, extract method
+            else:
                 #print('no pv_power, will check battery')
                 if self.battery_power > 0:
                     #print('battery has [{}] power, will use some or all for the container'.format(self.battery_power))
@@ -312,10 +322,10 @@ class PyPower(mosaik_api.Simulator):
                     else:
                         #print('battery power does not cover container need [{}], will take it all and cover the rest from the grid'.format(self.container_need))
                         self.battery_action = 'discharge:' + str(self.battery_power)
-                        # todo: take power from the grid (equal to abs(battery_extra_power)), do something?
-                #else:
+                        self.grid_energy = abs(battery_extra_power)
+                else:
                     #print('battery is empty, will use grid power')
-                    # todo: take power from the grid (equal to self.container_need), do something? same as the todo above, maybe extract function?
+                    self.grid_energy = self.container_need
 
 
 def get_control_node(entities):

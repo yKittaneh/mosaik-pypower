@@ -74,7 +74,7 @@ def reset_inputs(case):
 
 
 def set_inputs(case, etype, idx, data, static):
-    if etype == 'PQBus':
+    if etype == 'PQBus' or etype == 'PowerNode':
         if 'P' in data:
             case['bus'][idx][idx_bus.PD] = data['P'] / BUS_PQ_FACTOR
         if 'Q' in data:
@@ -112,7 +112,7 @@ def get_cache_entries(cases, entity_map):
                 data['Q'] = gen[idx_gen.QG] * BUS_PQ_FACTOR
                 data['Vm'] = bus[idx_bus.VM] * attrs['static']['Vl']
                 data['Va'] = bus[idx_bus.VA]
-            elif etype == 'PQBus':
+            elif etype == 'PQBus' or etype == 'PowerNode':
                 bus = case['bus'][idx]
                 data['P'] = bus[idx_bus.PD] * BUS_PQ_FACTOR
                 data['Q'] = bus[idx_bus.QD] * BUS_PQ_FACTOR
@@ -148,7 +148,7 @@ def get_cache_entries(cases, entity_map):
                 data['Q_to'] = branch[idx_brch.QT] * BRANCH_PQ_FACTOR
         else:
             # Failed to converge.
-            if etype in ('RefBus', 'PQBus'):
+            if etype in ('RefBus', 'PQBus', 'PowerNode'):
                 data['P'] = float('nan')
                 data['Q'] = float('nan')
                 data['Vm'] = float('nan')
